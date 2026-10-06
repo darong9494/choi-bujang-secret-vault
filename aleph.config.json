@@ -4,8 +4,18 @@
   "publicAppUrl": "https://replace-with-your-vercel-app.example",
   "sampleMarker": "SAMPLE_NOTE_1",
   "judgeIssuer": "https://aleph-judge-production.up.railway.app/defense/judge",
-  "identityProvider": null,
-  "allowedRoutes": [],
+  "identityProvider": {
+    "issuer": "https://pmqqwzjprwbgthboxakr.supabase.co/auth/v1",
+    "audience": "authenticated",
+    "jwksUrl": "https://pmqqwzjprwbgthboxakr.supabase.co/auth/v1/.well-known/jwks.json"
+  },
+  "allowedRoutes": [
+    "GET /api/notes",
+    "POST /api/notes",
+    "GET /api/notes/:id",
+    "PUT /api/notes/:id",
+    "DELETE /api/notes/:id"
+  ],
   "originalApiUrl": null,
   "restoreRoute": null
 }
