@@ -1,52 +1,116 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BYTE BACK | 점령된 자료실</title>
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
-    main { max-width: 760px; margin: 0 auto; padding: 44px 22px 64px; }
-    .eyebrow { color: #8ad8df; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
-    h1 { margin: 16px 0; font-size: clamp(30px, 7vw, 48px); line-height: 1.2; }
-    p { font-size: 17px; line-height: 1.7; color: #bfd0e5; }
-    .notice { margin: 26px 0; padding: 18px; border: 1px solid #d07384; border-radius: 14px; color: #ffe3e8; background: #612a3544; }
-    ul { list-style: none; display: grid; gap: 12px; padding: 0; }
-    li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
-    strong { display: block; font-size: 18px; margin-bottom: 5px; }
-    li span { color: #bfd0e5; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>최부장 내 자료실 (Secret Vault Beta)</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent: #38bdf8;
+            --border: #334155;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        h1 { font-size: 1.75rem; color: var(--accent); margin: 0 0 0.5rem 0; }
+        p.subtitle { color: var(--text-sub); margin: 0; font-size: 0.95rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.25rem;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+        .card h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+        .card p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-sub);
+        }
+    </style>
 </head>
 <body>
-  <main>
-    <div class="eyebrow">BYTE BACK · 1단계 피해 확인</div>
-    <h1>점령된 자료실</h1>
-    <p>지금은 보호 장치가 없는 상태입니다. 아래 기록은 모두 실습을 위해 만든 가상 자료입니다.</p>
-    <div class="notice">로그인하지 않은 방문자도 자료를 볼 수 있습니다. 공개 범위를 확인하고, 다음 제작 단계에서 접근을 차례로 막아 주세요.</div>
-    <ul id="notes" aria-live="polite"><li>가상 자료를 불러오는 중입니다.</li></ul>
-  </main>
-  <script type="module">
-    const list = document.querySelector('#notes');
-    try {
-      const response = await fetch('/data.json', { cache: 'no-store' });
-      if (!response.ok) throw new Error('공개 자료를 읽을 수 없습니다.');
-      const data = await response.json();
-      if (!Array.isArray(data.notes)) throw new Error('자료 형식이 맞지 않습니다.');
-      list.replaceChildren(...data.notes.map(note => {
-        const item = document.createElement('li');
-        const title = document.createElement('strong');
-        const content = document.createElement('span');
-        title.textContent = note.title;
-        content.textContent = note.content;
-        item.append(title, content);
-        return item;
-      }));
-    } catch (error) {
-      const item = document.createElement('li');
-      item.textContent = error.message;
-      list.replaceChildren(item);
-    }
-  </script>
+    <div class="container">
+        <header>
+            <h1>🔒 최부장 내 자료실 (Secret Vault Beta)</h1>
+            <p class="subtitle">Stage 2: Serverless API & Supabase DB 연동 상태</p>
+        </header>
+
+        <main id="notes-container">
+            <div class="loading">서버 API에서 보안 자료를 로딩 중입니다...</div>
+        </main>
+    </div>
+
+    <script>
+        async function fetchNotes() {
+            const container = document.getElementById('notes-container');
+            try {
+                // Fetch notes from Vercel Serverless API endpoint
+                const res = await fetch('/api/notes');
+                if (!res.ok) throw new Error('API 호출 실패');
+                
+                const notes = await res.json();
+                
+                if (!notes || notes.length === 0) {
+                    container.innerHTML = '<div class="loading">등록된 메모가 없습니다.</div>';
+                    return;
+                }
+
+                container.innerHTML = `<div class="grid">${
+                    notes.map(note => `
+                        <div class="card">
+                            <h3>${escapeHtml(note.title)}</h3>
+                            <p>${escapeHtml(note.content)}</p>
+                        </div>
+                    `).join('')
+                }</div>`;
+            } catch (err) {
+                container.innerHTML = `<div class="error">메모를 불러올 수 없습니다. API 연동 또는 환경변수를 확인해 주세요.</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            return text
+                ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+                : '';
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchNotes);
+    </script>
 </body>
 </html>

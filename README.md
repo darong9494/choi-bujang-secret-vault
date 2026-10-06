@@ -23,3 +23,32 @@
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
+
+
+choi-bujang-secret-vault
+
+최부장의 내 자료실 (Secret Vault Beta) - 방어전 프로젝트
+
+📌 단계별 진행 현황
+
+R1 Complete: 정적 파일 기반 초기 구성
+
+공개 정적 저장소 및 기본 UI 틀 구축
+
+R2 Complete: 자료를 코드 밖으로 이동 (Current Stage)
+
+data.json 정적 파일 내 메모 데이터를 완전히 비우고 빈 배열([])로 변경.
+
+Supabase DB에 notes 테이블 생성 및 가상 메모 데이터 이관.
+
+Vercel Serverless Function (/api/notes) 구축 및 Server Side에서 Supabase REST API 호출.
+
+브라우저 클라이언트 및 응답에 SUPABASE_SECRET_KEY가 노출되지 않도록 서버 단 보호 조치.
+
+⚠️ 알려진 보안 약점 (Known Weaknesses)
+
+미인증 API Endpoint 공개
+
+현재 /api/notes 서버 API는 접근 제어(Authentication/Authorization)가 적용되어 있지 않습니다.
+
+누구든지 /api/notes URL로 비로그인 요청을 보내면 DB에 보관된 가상 메모 목록 전체를 반환받을 수 있는 구조적 약점이 있습니다. (3단계에서 인증 로직 추가 예정)
