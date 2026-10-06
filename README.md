@@ -8,7 +8,9 @@
 2. 방어전 1단계 카드의 **Deploy** 버튼을 누릅니다. Vercel에 GitHub로 로그인하고, 새 저장소가 **본인 계정의 Public 저장소**인지 확인한 뒤 Deploy를 누릅니다.
 3. 배포가 끝나면 화면에 나온 `https://…vercel.app` 주소를 방어전 1단계 카드에 붙여넣고 제출합니다. 저장소 주소나 설정 파일은 적지 않습니다.
 
-배포가 끝나면 `/`에서 점령된 가상 자료실을 볼 수 있습니다. `/data.json`에는 같은 가상 메모가 공개됩니다. 이 공개 상태를 확인하는 것이 1단계의 출발점입니다. 1단계 접수와 심판 판정은 포털에서 확인합니다.
+배포가 끝나면 `/`에서 가상 자료실을 볼 수 있습니다. 화면은 `/api/notes` Vercel 서버 함수에서 Supabase의 가상 메모 네 건을 읽습니다. `/data.json`은 빈 목록만 제공하며 메모를 담지 않습니다. 1단계 접수와 심판 판정은 포털에서 확인합니다.
+
+Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 전용 `SUPABASE_SECRET_KEY`를 입력하고 재배포하세요. 두 값은 브라우저 코드에 넣지 않으며, 함수도 키를 응답하거나 로그에 기록하지 않습니다. Supabase `notes` 테이블에는 화면용 가상 메모 네 건이 준비되어 있어야 합니다.
 
 ## 시작 틀의 자동 처리
 
@@ -16,7 +18,7 @@
 
 `aleph.config.json`의 `repoUrl`과 `publicAppUrl`은 이전 제출 묶음 방식의 자리표시자입니다. 1단계에서는 학생이 편집하지 않습니다. 2단계 이후 코딩 도구가 필요한 설정과 보호 기능을 단계별로 작성합니다. `npm run bundle`과 `bundle-notes.json`도 1단계의 세 걸음에는 포함되지 않습니다.
 
-로컬에서 가상 화면만 확인할 때는 `npm run build -- --local`을 사용합니다. 로컬 실행은 Vercel 배포나 심판 접수를 증명하지 않습니다. 저장소의 `src/attack-check.mjs`는 실제 배포가 된 뒤 `/data.json`을 비로그인으로 요청해 공개 가상 메모의 확인 표시를 읽습니다.
+로컬에서 배포 식별정보 없이 정적 결과물만 확인할 때는 `npm run build -- --local`을 사용합니다. 로컬 실행은 Vercel 배포나 심판 접수를 증명하지 않습니다. 이 빌드는 `public/data.json`에 빈 목록을 생성합니다.
 
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
@@ -25,30 +27,6 @@
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
 
 
-choi-bujang-secret-vault
+## 알려진 보안 약점
 
-최부장의 내 자료실 (Secret Vault Beta) - 방어전 프로젝트
-
-📌 단계별 진행 현황
-
-R1 Complete: 정적 파일 기반 초기 구성
-
-공개 정적 저장소 및 기본 UI 틀 구축
-
-R2 Complete: 자료를 코드 밖으로 이동 (Current Stage)
-
-data.json 정적 파일 내 메모 데이터를 완전히 비우고 빈 배열([])로 변경.
-
-Supabase DB에 notes 테이블 생성 및 가상 메모 데이터 이관.
-
-Vercel Serverless Function (/api/notes) 구축 및 Server Side에서 Supabase REST API 호출.
-
-브라우저 클라이언트 및 응답에 SUPABASE_SECRET_KEY가 노출되지 않도록 서버 단 보호 조치.
-
-⚠️ 알려진 보안 약점 (Known Weaknesses)
-
-미인증 API Endpoint 공개
-
-현재 /api/notes 서버 API는 접근 제어(Authentication/Authorization)가 적용되어 있지 않습니다.
-
-누구든지 /api/notes URL로 비로그인 요청을 보내면 DB에 보관된 가상 메모 목록 전체를 반환받을 수 있는 구조적 약점이 있습니다. (3단계에서 인증 로직 추가 예정)
+`/api/notes`는 아직 인증·인가 검사를 하지 않는 공개 주소입니다. 누구나 URL에 직접 요청해 DB의 네 가상 메모를 받을 수 있습니다. 서버 전용 키는 보호되지만, API가 반환하는 메모는 공개 상태이며 다음 단계에서 접근 제어를 추가해야 합니다.

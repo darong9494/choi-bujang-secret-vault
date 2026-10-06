@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
-  // Prevent non-GET requests
   if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -8,12 +8,12 @@ export default async function handler(req, res) {
   const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseSecretKey) {
-    return res.status(500).json({ error: 'Database configuration missing on server.' });
+    return res.status(500).json({ error: 'Server configuration missing.' });
   }
 
   try {
-    // Fetch notes using PostgREST API with secret key (bypassing RLS safely on server-side)
-    const response = await fetch(`${supabaseUrl}/rest/v1/notes?select=id,title,content,created_at`, {
+    const endpoint = new URL('/rest/v1/notes?select=title,content&order=created_at.asc&limit=4', supabaseUrl);
+    const response = await fetch(endpoint, {
       headers: {
         'apikey': supabaseSecretKey,
         'Authorization': `Bearer ${supabaseSecretKey}`,
@@ -27,12 +27,11 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Cache control & return sanitized response without leaking keys
-    res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate');
-    return res.status(200).json(data);
-  } catch (err) {
-    // Log generic error on server side without revealing secret keys
-    console.error('Error fetching notes from Supabase DB');
+    if (!Array.isArray(data)) throw new Error('invalid_notes_response');
+    const notes = data.map(({ title, content }) => ({ title, content }));
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json(notes);
+  } catch {
     return res.status(500).json({ error: 'Failed to retrieve notes' });
   }
 }
