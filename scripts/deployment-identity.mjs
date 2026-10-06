@@ -3,11 +3,27 @@ const REPO = /^[A-Za-z0-9._-]{1,100}$/u;
 const SHA = /^[a-f0-9]{40}$/iu;
 const HOST = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.vercel\.app$/iu;
 
+function originalApiUrl(value) {
+  if (value == null) return null;
+  if (typeof value !== 'string' || value !== value.trim()) {
+    throw new Error('원본 자료 주소는 쿼리 없는 HTTPS 주소여야 합니다.');
+  }
+  let url;
+  try { url = new URL(value); } catch {
+    throw new Error('원본 자료 주소는 쿼리 없는 HTTPS 주소여야 합니다.');
+  }
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
+    throw new Error('원본 자료 주소는 쿼리 없는 HTTPS 주소여야 합니다.');
+  }
+  return url.href;
+}
+
 export function deploymentIdentity(env, config) {
   const owner = env.VERCEL_GIT_REPO_OWNER;
   const repo = env.VERCEL_GIT_REPO_SLUG;
   const commit = env.VERCEL_GIT_COMMIT_SHA;
   const host = env.VERCEL_URL;
+  const sourceUrl = originalApiUrl(config?.originalApiUrl);
   if (env.VERCEL_GIT_PROVIDER !== 'github' || !OWNER.test(owner || '')
       || !REPO.test(repo || '') || repo === '.' || repo === '..'
       || repo.toLowerCase().endsWith('.git') || !SHA.test(commit || '')
@@ -26,5 +42,6 @@ export function deploymentIdentity(env, config) {
     publicAppUrl: `https://${host.toLowerCase()}`,
     judgeIssuer: config.judgeIssuer,
     sampleMarker: config.sampleMarker,
+    originalApiUrl: sourceUrl,
   };
 }
