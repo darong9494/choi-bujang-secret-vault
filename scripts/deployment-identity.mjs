@@ -24,6 +24,7 @@ export function deploymentIdentity(env, config) {
   const commit = env.VERCEL_GIT_COMMIT_SHA;
   const host = env.VERCEL_URL;
   const sourceUrl = originalApiUrl(config?.originalApiUrl);
+  const allowedRoutes = config?.allowedRoutes;
   if (env.VERCEL_GIT_PROVIDER !== 'github' || !OWNER.test(owner || '')
       || !REPO.test(repo || '') || repo === '.' || repo === '..'
       || repo.toLowerCase().endsWith('.git') || !SHA.test(commit || '')
@@ -31,6 +32,8 @@ export function deploymentIdentity(env, config) {
       || typeof config.judgeIssuer !== 'string'
       || !/^https:\/\/[a-z0-9-]+\.up\.railway\.app\/defense\/judge$/iu.test(config.judgeIssuer)
       || typeof config.sampleMarker !== 'string'
+      || !Array.isArray(allowedRoutes) || allowedRoutes.length < 1
+      || allowedRoutes.some(route => typeof route !== 'string' || !route.trim())
       || !/^[A-Z0-9_]{1,80}$/u.test(config.sampleMarker)) {
     throw new Error('배포 식별 정보를 확인할 수 없습니다. Vercel 시스템 환경변수와 1단계 시작 틀을 확인하세요.');
   }
@@ -42,6 +45,7 @@ export function deploymentIdentity(env, config) {
     publicAppUrl: `https://${host.toLowerCase()}`,
     judgeIssuer: config.judgeIssuer,
     sampleMarker: config.sampleMarker,
+    allowedRoutes,
     originalApiUrl: sourceUrl,
   };
 }
