@@ -130,9 +130,9 @@
     },
     {
       "alertId": "bf-22",
-      "action": "alert",
-      "confidence": 0.65,
-      "reason": "짧은 시간의 동일 주소 로그인 실패 연속"
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 무차별 대입 패턴 없음"
     },
     {
       "alertId": "bf-23",
@@ -173,7 +173,7 @@
   ],
   "counts": {
     "block": 10,
-    "alert": 10,
-    "record": 8
+    "alert": 9,
+    "record": 9
   }
 }

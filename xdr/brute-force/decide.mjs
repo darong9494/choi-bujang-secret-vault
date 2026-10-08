@@ -28,6 +28,7 @@ export function decide(alert) {
     : /여러 계정|서로 다른 계정|계정 \d+개/.test(description);
   const explicitFailure = /실패/.test(description);
   const samePasswordSpray = multipleAccounts && /(?:같은|동일한) 비밀번호/.test(description);
+  const describedFailureCount = Number(description.match(/실패(?:가|는)?\s*(\d+)\s*건/)?.[1] ?? 0);
   const shortWindow = /\d+분|\d+초/.test(description);
 
   let confidence = 0;
@@ -40,7 +41,7 @@ export function decide(alert) {
     } else if ((count >= 20 || level >= 10) && (shortWindow || count >= 20)) {
       confidence = 0.9;
       patternName = PATTERNS[0].name;
-    } else if (count >= 3 || /실패 \d+건/.test(description)) {
+    } else if (count >= 3 || describedFailureCount >= 3) {
       confidence = 0.65;
       patternName = PATTERNS[0].name;
     }
