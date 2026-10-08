@@ -30,3 +30,7 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 ## 알려진 보안 약점
 
 `/api/notes`는 아직 인증·인가 검사를 하지 않는 공개 주소입니다. 누구나 URL에 직접 요청해 DB의 네 가상 메모를 받을 수 있습니다. 서버 전용 키는 보호되지만, API가 반환하는 메모는 공개 상태이며 다음 단계에서 접근 제어를 추가해야 합니다.
+
+## 보너스 XDR: 무차별 로그인 공격 연습
+
+`xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
