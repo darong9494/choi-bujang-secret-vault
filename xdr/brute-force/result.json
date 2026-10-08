@@ -10,9 +10,9 @@
     },
     {
       "alertId": "bf-02",
-      "action": "record",
-      "confidence": 0,
-      "reason": "일치하는 무차별 대입 패턴 없음"
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "여러 계정에 같은 비밀번호 대입"
     },
     {
       "alertId": "bf-03",
@@ -172,8 +172,8 @@
     }
   ],
   "counts": {
-    "block": 9,
+    "block": 10,
     "alert": 10,
-    "record": 9
+    "record": 8
   }
 }

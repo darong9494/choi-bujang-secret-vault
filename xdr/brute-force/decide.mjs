@@ -27,12 +27,13 @@ export function decide(alert) {
     ? alert.data.accounts.split(',').filter(Boolean).length > 1
     : /여러 계정|서로 다른 계정|계정 \d+개/.test(description);
   const explicitFailure = /실패/.test(description);
+  const samePasswordSpray = multipleAccounts && /(?:같은|동일한) 비밀번호/.test(description);
   const shortWindow = /\d+분|\d+초/.test(description);
 
   let confidence = 0;
   let patternName = NO_MATCH;
 
-  if (explicitFailure && sourceAddress && account) {
+  if ((explicitFailure || samePasswordSpray) && sourceAddress && account) {
     if (multipleAccounts) {
       confidence = 0.9;
       patternName = PATTERNS[1].name;
