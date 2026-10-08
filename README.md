@@ -34,3 +34,7 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
+
+## 보너스 XDR: 웹 주입 공격 연습
+
+`xdr/web-injection/decide.mjs`는 MITRE ATT&CK T1190 근거의 입력 신호로 fixture 경보를 `block`·`alert`·`record` 분류합니다. 저장소 루트에서 `npm run xdr:run -- web-injection`을 실행하면 `xdr/web-injection/result.json`을 갱신합니다. `node xdr/web-injection/respond.mjs`는 차단 후보의 쿼리 지문에 만료 시각과 근거 경보 번호를 붙여 임시 거부 규칙으로 기록하고, 애매한 경보는 `xdr/alerts.log`에 남깁니다. 이 자료는 로컬 fixture 연습이며 실제 운영 배포나 심판 판정이 아닙니다.

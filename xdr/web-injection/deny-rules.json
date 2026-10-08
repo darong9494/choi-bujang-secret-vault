@@ -1,0 +1,86 @@
+{
+  "schema": "aleph.xdr.deny-rules.v1",
+  "generatedAt": "2026-10-08T06:27:49.638Z",
+  "rules": [
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/notes",
+      "queryLength": 15,
+      "querySha256": "2b86301a3c92aa42044b95d69cf657b0e2547097e296a7374fd4cdd19ef4733c",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-01"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/search",
+      "queryLength": 19,
+      "querySha256": "e5bf105b5149bd06455a31da384cabdd610f8ed95b006d16842eb04c081cf5a4",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-02"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/files",
+      "queryLength": 18,
+      "querySha256": "f6021d4a80b38a9c22b9e46bda3be9f9490e235943133de80bd513f9a1c4a3a1",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-03"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/notes",
+      "queryLength": 13,
+      "querySha256": "9e4f94f3c669411b2d93f7592d963eba24a395ee4c03f29e8ce64a64e6a6ab46",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-04"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/search",
+      "queryLength": 18,
+      "querySha256": "38f31562099d54989cc4db6dd823c2eb590a73173021090b49c27c87b035df89",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-05"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/notes",
+      "queryLength": 19,
+      "querySha256": "552fee898a380677313b400ce1676a7052d2393d9f5c151fa9913f6ca529facf",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-06"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/files",
+      "queryLength": 18,
+      "querySha256": "91072b604e4eba63ae0a6cce1f3a925c9d48071fa8b9550660ea27d8cae28844",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-07"
+      ]
+    },
+    {
+      "ruleId": "web_injection_query_deny",
+      "path": "/api/notes",
+      "queryLength": 22,
+      "querySha256": "5c5e9ce0dd116402ea2cb307ae3e6bfcf25a56d0e73fe50c40ed667b53222dde",
+      "expiresAt": "2026-10-08T06:42:49.638Z",
+      "evidenceAlertIds": [
+        "wi-08"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "technique": "T1190",
+  "patterns": [
+    {
+      "name": "요청 인자의 SQL 구문",
+      "condition": "HTTP 요청 인자에 SQL 키워드·연산자·주석 구문이 결합되어 데이터베이스 질의에 영향을 주려는 형태가 있습니다.",
+      "evidence": "MITRE ATT&CK T1190은 공개 웹·데이터베이스를 노린 SQL injection을 초기 접근 사례로 설명합니다."
+    },
+    {
+      "name": "요청 인자의 script 태그",
+      "condition": "HTTP 요청 인자에 script 태그 표식이 있어 스크립트 삽입 가능성을 살펴볼 신호가 있습니다.",
+      "evidence": "MITRE ATT&CK T1190 탐지 전략 DET0080은 공개 앱을 향한 crafted HTTP 입력을 살피며, script 태그 표식만으로 악용 성공을 단정하지 않습니다."
+    },
+    {
+      "name": "요청 인자의 경로 거슬러 올라가기 반복",
+      "condition": "HTTP 요청 인자에 ../ 경로 이동 표식이 반복되어 상위 경로 접근을 시도하는 형태가 있습니다.",
+      "evidence": "MITRE ATT&CK T1190의 캠페인 C0017 사례는 directory traversal 취약점을 악용해 초기 접근한 일을 기록합니다."
+    }
+  ]
+}
