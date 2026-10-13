@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if ([6, 7, 8, 9, 10].includes(config.step)) return runStep6Checks(config);
+  if ([6, 7, 8, 9, 10, 11].includes(config.step)) return runStep6Checks(config);
   if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
@@ -75,6 +75,22 @@ async function runStep6Checks(config) {
       results.push({ attackId: 'anonymous_note_restore',
         expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
         observed: '실제 GET /api/restore/:noteId 요청을 보냈으나 응답 확인 실패; 미확인' });
+    }
+  }
+
+  if (config.step >= 11) {
+    try {
+      const response = await fetch(new URL('/api/device/status', app), {
+        redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(5000),
+      });
+      results.push({ attackId: 'anonymous_device_approval',
+        expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
+        observed: `실제 GET /api/device/status HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+      await response.body?.cancel();
+    } catch {
+      results.push({ attackId: 'anonymous_device_approval',
+        expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
+        observed: '실제 GET /api/device/status 요청을 보냈으나 응답 확인 실패; 미확인' });
     }
   }
 

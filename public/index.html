@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BYTE BACK | 점령된 자료실</title>
+  <meta name="theme-color" content="#101a28">
+  <title>나의 자료실 | BYTE BACK</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
@@ -28,14 +31,27 @@
     .note-actions button, #cancel-edit { width: auto; }
     #auth-status, #auth-error { min-height: 1.5em; margin: 10px 0 0; font-size: 15px; }
     #auth-error { color: #ffb7c3; }
+    #device-state { color: #8ad8df; }
+    #install-button, #device-recheck { margin-top: 10px; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <main>
-    <div class="eyebrow">BYTE BACK · 1단계 피해 확인</div>
-    <h1>점령된 자료실</h1>
-    <p>지금은 보호 장치가 없는 상태입니다. 아래 기록은 모두 실습을 위해 만든 가상 자료입니다.</p>
+    <div class="eyebrow">BYTE BACK · 나만의 접속 앱</div>
+    <h1>나의 자료실</h1>
+    <p>자료는 로그인과 서버의 기기 승인을 확인한 뒤에만 화면에 표시합니다. 아래 기록은 모두 실습용 가상 자료입니다.</p>
+    <section class="auth" aria-labelledby="install-heading">
+      <h2 id="install-heading">앱 설치</h2>
+      <p>앱 이름은 「나의 자료실」입니다. 브라우저 메뉴의 앱 설치 또는 홈 화면에 추가를 누를 수 있습니다. 설치 여부만으로 기기가 승인되지는 않습니다.</p>
+      <p>오프라인에서는 로그인·기기 승인 확인과 자료 읽기를 사용할 수 없습니다. 연결 후 화면을 다시 열어 확인하세요. 보호 자료는 오프라인 저장소에 보관하지 않습니다.</p>
+      <button id="install-button" type="button" hidden>이 기기에 앱 설치</button>
+    </section>
+    <section class="auth" aria-labelledby="device-heading">
+      <h2 id="device-heading">이 기기의 승인 상태</h2>
+      <p id="device-state" aria-live="polite">로그인한 뒤 서버에 기기 승인 상태를 확인합니다.</p>
+      <button id="device-recheck" type="button" hidden>승인 상태 다시 확인</button>
+    </section>
     <section class="auth" aria-labelledby="auth-heading">
       <h2 id="auth-heading">자료실 로그인</h2>
       <form id="login-form">
@@ -56,7 +72,7 @@
       <button id="cancel-edit" type="button" hidden>수정 취소</button>
       <p id="note-error" role="alert" hidden></p>
     </form>
-    <ul id="notes" aria-live="polite"><li>로그인 후 자료를 불러옵니다.</li></ul>
+    <ul id="notes" aria-live="polite" hidden></ul>
   </main>
   <script type="module">
     const loginForm = document.querySelector('#login-form');
@@ -72,9 +88,14 @@
     const noteError = document.querySelector('#note-error');
     const noteFormHeading = document.querySelector('#note-form-heading');
     const cancelEdit = document.querySelector('#cancel-edit');
+    const deviceState = document.querySelector('#device-state');
+    const deviceRecheck = document.querySelector('#device-recheck');
+    const installButton = document.querySelector('#install-button');
     let activeSession = null;
+    let deviceApproved = false;
+    let deviceCheckVersion = 0;
     let notesLoadVersion = 0;
-    const SESSION_STORAGE_KEY = 'byte-back-session';
+    let installPrompt = null;
 
     function showAuthError(message) {
       authError.textContent = message;
@@ -96,31 +117,59 @@
     }
 
     function setSession(session) {
+      ++deviceCheckVersion;
+      ++notesLoadVersion;
       activeSession = session;
-      if (session?.access_token && session?.refresh_token) {
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-      } else {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
-      }
+      deviceApproved = false;
       const signedIn = Boolean(session?.access_token);
       authStatus.textContent = signedIn
         ? `로그인됨: ${session.user?.email ?? '계정'}`
         : '로그아웃 상태입니다.';
       loginForm.hidden = signedIn;
       logoutButton.hidden = !signedIn;
-      noteForm.hidden = !signedIn;
+      noteForm.hidden = true;
+      deviceRecheck.hidden = !signedIn;
+      list.hidden = true;
+      list.replaceChildren();
+      deviceState.textContent = signedIn
+        ? '서버에 기기 승인 상태를 확인하는 중입니다.'
+        : '로그인한 뒤 서버에 기기 승인 상태를 확인합니다.';
       authError.hidden = true;
       authError.textContent = '';
-      void loadNotes(session);
+      if (signedIn) void checkDevice(session);
     }
 
-    async function restoreSession() {
-      let saved;
-      try { saved = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || 'null'); }
-      catch { saved = null; }
-      if (!saved?.refresh_token) return setSession(null);
-      try { setSession(await authRequest({ action: 'refresh', refresh_token: saved.refresh_token })); }
-      catch { setSession(null); }
+    async function checkDevice(session) {
+      const version = ++deviceCheckVersion;
+      ++notesLoadVersion;
+      deviceApproved = false;
+      noteForm.hidden = true;
+      list.hidden = true;
+      list.replaceChildren();
+      deviceState.textContent = '서버에 기기 승인 상태를 확인하는 중입니다.';
+      try {
+        const response = await fetch('/api/device/status', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const result = await response.json();
+        if (version !== deviceCheckVersion || session !== activeSession) return;
+        if (response.ok && result?.approved === true) {
+          deviceApproved = true;
+          deviceState.textContent = '서버가 이 기기를 승인했습니다. 자료실을 불러옵니다.';
+          noteForm.hidden = false;
+          list.hidden = false;
+          await loadNotes(session);
+          return;
+        }
+        deviceState.textContent = response.status === 401
+          ? '로그인 상태를 확인할 수 없습니다. 다시 로그인해 주세요.'
+          : '이 기기는 아직 승인되지 않았습니다. 기기 등록 담당자에게 문의하세요. 승인 전에는 자료를 표시하지 않습니다.';
+      } catch {
+        if (version === deviceCheckVersion && session === activeSession) {
+          deviceState.textContent = '서버의 승인 상태를 확인하지 못했습니다. 연결 후 다시 확인하세요.';
+        }
+      }
     }
 
     function showNoteError(message) {
@@ -140,6 +189,7 @@
 
     async function notesRequest(path, options = {}) {
       if (!activeSession?.access_token) throw new Error('로그인이 필요합니다.');
+      if (!deviceApproved) throw new Error('기기 승인 확인이 필요합니다.');
       const resourcePath = new URL(path, window.location.origin).pathname;
       const itemMatch = /^\/api\/notes\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/iu.exec(resourcePath);
       const resourceId = resourcePath === '/api/notes' ? 'memo:collection'
@@ -192,15 +242,7 @@
 
     async function loadNotes(session) {
       const version = ++notesLoadVersion;
-      activeSession = session;
-      noteForm.hidden = !session?.access_token;
-      if (!session?.access_token) {
-        list.replaceChildren();
-        const item = document.createElement('li');
-        item.textContent = '로그인하면 가상 자료를 볼 수 있습니다.';
-        list.append(item);
-        return;
-      }
+      if (!deviceApproved || !session?.access_token || session !== activeSession) return;
       list.replaceChildren();
       const loading = document.createElement('li');
       loading.textContent = '가상 자료를 불러오는 중입니다.';
@@ -236,6 +278,25 @@
     });
 
     logoutButton.addEventListener('click', () => setSession(null));
+    deviceRecheck.addEventListener('click', () => {
+      if (activeSession?.access_token) void checkDevice(activeSession);
+    });
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      installPrompt = event;
+      installButton.hidden = false;
+    });
+    installButton.addEventListener('click', async () => {
+      if (!installPrompt) return;
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      installButton.hidden = true;
+    });
+    window.addEventListener('appinstalled', () => {
+      installPrompt = null;
+      installButton.hidden = true;
+    });
 
     noteForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -291,7 +352,7 @@
       }
     });
 
-    void restoreSession();
+    setSession(null);
   </script>
 </body>
 </html>

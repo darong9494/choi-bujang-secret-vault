@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="나의 자료실">
+  <rect width="512" height="512" rx="112" fill="#101a28"/>
+  <path d="M130 112h252v288H130z" fill="#1a2a3d" stroke="#8ad8df" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M183 202h146M183 254h146M183 306h94" fill="none" stroke="#ecf4ff" stroke-width="18" stroke-linecap="round"/>
+  <path d="M328 347l31 18 31-18v-34l-31-18-31 18z" fill="#8ad8df"/>
+</svg>

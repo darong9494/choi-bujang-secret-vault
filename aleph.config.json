@@ -1,5 +1,5 @@
 {
-  "step": 10,
+  "step": 11,
   "repoUrl": "https://github.com/darong9494/choi-bujang-secret-vault",
   "publicAppUrl": "https://choi-bujang-secret-vault-beta.vercel.app/",
   "sampleMarker": "SAMPLE_NOTE_1",
