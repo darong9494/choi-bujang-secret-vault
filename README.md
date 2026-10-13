@@ -15,7 +15,7 @@
 
 1. 설치: 이 저장소를 clone하고 Node.js 22 이상에서 `npm install`을 실행합니다. Vercel 프로젝트에는 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` 또는 `SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`를 비밀 환경변수로 설정합니다. 값은 Git에 넣지 않습니다.
 2. 실행: Vercel에 `main`을 배포합니다. 공개 화면은 `/`, 서버 함수는 `/api/`입니다. `npm run build -- --local`은 로컬 정적 빌드만 확인합니다.
-3. 점검: 커밋·push와 배포 커밋 확인 후 `npm run bundle`을 실행합니다. 제출 파일 `artifacts/submission.json`과 `bundle-notes.json`은 Git에서 제외합니다. 작전실의 `지금 다시 확인`은 공개 API에 새 요청을 보냅니다.
+3. 점검: 커밋·push와 배포 커밋 확인 후 `npm run bundle`을 실행합니다. 제출 파일 `artifacts/submission.json`과 `bundle-notes.json`은 Git에서 제외합니다. 작전실의 `지금 다시 확인`은 저장된 학생 점검 기록을 다시 읽으며 새 공격 요청을 보내지 않습니다.
 4. 중지: Vercel 프로젝트에서 배포를 중지하거나 이전 배포로 롤백합니다.
 5. 복구: 검증된 커밋을 확인해 다시 배포하고 정상·거부 요청을 다시 보냅니다. 제공 엔진의 백업·감사 기록은 학생 저장소를 다시 배포하는 것으로 복구되지 않습니다.
 
@@ -36,6 +36,6 @@
 | 가상 규칙·탐지 | 등록·미등록 기기, 복합 이상·재확인, 정상 조회·조회 폭주 | 학생 코드가 만든 고정 가상 입력 |
 | 미실행 | 등록된 실기기 자료 읽기, 타인 메모, 엔진 권한 회수·복원·감사 | 제공 엔진 기록 미연결 |
 
-`api/checks.js`와 `npm run bundle`은 같은 점검 목록을 사용합니다. 화면의 `점검 항목`, `막은 공격`, `뚫린 공격`, `실행하지 않은 점검`은 개별 항목을 세어 서버 응답과 다시 대조합니다. `blocked`는 학생 자기 점검의 기대 응답이라는 뜻이며 운영 심판의 통과 판정이 아닙니다. 각 실측 항목의 확인 시각은 응답 상단에, Vercel이 제공한 요청 ID는 행에 표시합니다. 메모 본문, 토큰, 기기 키는 점검 기록에 넣지 않습니다.
+`api/checks.js`는 `npm run bundle`에서 실제 요청으로 확인한 항목 중 공개 가능한 다섯 필드만 담은 `src/ops-record.json`을 읽습니다. 화면 조회가 새 공격 요청을 만들지 않습니다. 화면의 `점검 항목`, `막은 공격`, `뚫린 공격`, `실행하지 않은 점검`은 저장된 학생 점검 항목만 세며, 운영 심판의 41종 시험은 집계하지 않습니다. `blocked`는 학생 자기 점검의 기대 응답이라는 뜻이며 운영 심판의 통과 판정이 아닙니다. 기록의 확인 시각과 대상 커밋을 표시하고, Vercel이 제공한 요청 ID가 있으면 행에 표시합니다. 메모 본문, 토큰, 기기 키는 점검 기록에 넣지 않습니다.
 
 이전 단계의 상세 설명은 [docs/STEP_RECORDS.md](docs/STEP_RECORDS.md)에 보존했습니다. 요청·응답 형식은 [docs/DECIDER_REQUEST.md](docs/DECIDER_REQUEST.md), 탐지 가상 사건 형식은 [docs/DETECT_EVENTS.md](docs/DETECT_EVENTS.md)를 따릅니다.
