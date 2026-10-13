@@ -1,4 +1,5 @@
 import { databaseRequest, requireStudentIdentity, UUID } from '../notes.js';
+import { matchesResourceIdHeader, RESOURCE_KINDS, resourceId } from '../../src/resource-id.mjs';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -21,6 +22,9 @@ export default async function handler(req, res) {
     if (typeof id !== 'string' || !UUID.test(id)) {
       return res.status(400).json({ error: 'A valid note id is required.' });
     }
+    if (!matchesResourceIdHeader(req, resourceId(RESOURCE_KINDS.memo, id))) {
+      return res.status(400).json({ error: 'A valid resource ID is required.' });
+    }
 
     const endpoint = new URL('/rest/v1/notes', supabaseUrl);
     endpoint.searchParams.set('id', `eq.${id}`);
@@ -34,7 +38,9 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Note not found.' });
       }
       const { title, content } = rows[0];
-      return res.status(200).json({ id, title, body: content });
+      return res.status(200).json({
+        id, resourceId: resourceId(RESOURCE_KINDS.memo, id), title, body: content,
+      });
     }
 
     if (req.method === 'PUT') {
@@ -67,7 +73,7 @@ export default async function handler(req, res) {
       if (!rows.length || rows[0].owner_id !== identity.userId) {
         return res.status(404).json({ error: 'Note not found.' });
       }
-      return res.status(200).json({ id });
+      return res.status(200).json({ id, resourceId: resourceId(RESOURCE_KINDS.memo, id) });
     }
 
     endpoint.searchParams.set('owner_id', `eq.${identity.userId}`);

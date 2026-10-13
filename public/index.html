@@ -140,11 +140,17 @@
 
     async function notesRequest(path, options = {}) {
       if (!activeSession?.access_token) throw new Error('로그인이 필요합니다.');
+      const resourcePath = new URL(path, window.location.origin).pathname;
+      const itemMatch = /^\/api\/notes\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/iu.exec(resourcePath);
+      const resourceId = resourcePath === '/api/notes' ? 'memo:collection'
+        : itemMatch ? `memo:${itemMatch[1].toLowerCase()}` : null;
+      if (!resourceId) throw new Error('자료 자원 ID가 올바르지 않습니다.');
       const response = await fetch(path, {
         ...options,
         cache: 'no-store',
         headers: {
           Authorization: `Bearer ${activeSession.access_token}`,
+          'X-Resource-Id': resourceId,
           ...(options.body ? { 'Content-Type': 'application/json' } : {}),
           ...(options.headers ?? {}),
         },

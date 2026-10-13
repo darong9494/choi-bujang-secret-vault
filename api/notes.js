@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createLoginVerifier } from '../src/verify-login.mjs';
+import { matchesResourceIdHeader, RESOURCE_KINDS, resourceId } from '../src/resource-id.mjs';
 
 const config = JSON.parse(readFileSync(new URL('../aleph.config.json', import.meta.url), 'utf8'));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -55,6 +56,9 @@ export default async function handler(req, res) {
   try {
     const identity = await requireStudentIdentity(req);
     if (!identity) return res.status(401).json({ error: 'Authentication required.' });
+    if (!matchesResourceIdHeader(req, resourceId(RESOURCE_KINDS.memo, 'collection'))) {
+      return res.status(400).json({ error: 'A valid resource ID is required.' });
+    }
 
     if (req.method === 'GET') {
       const endpoint = new URL('/rest/v1/notes?select=id,title,content&order=created_at.asc', supabaseUrl);
@@ -63,7 +67,9 @@ export default async function handler(req, res) {
       if (!response.ok) throw new Error('notes_read_failed');
       const rows = await response.json();
       if (!Array.isArray(rows)) throw new Error('invalid_notes_response');
-      return res.status(200).json(rows.map(({ id, title, content }) => ({ id, title, body: content })));
+      return res.status(200).json(rows.map(({ id, title, content }) => ({
+        id, resourceId: resourceId(RESOURCE_KINDS.memo, id), title, body: content,
+      })));
     }
 
     const note = parseNote(req.body, { allowId: true });
@@ -76,7 +82,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({ id, title: note.title, content: note.body, owner_id: identity.userId }),
     });
     if (!response.ok) throw new Error('note_create_failed');
-    return res.status(201).json({ id });
+    return res.status(201).json({ id, resourceId: resourceId(RESOURCE_KINDS.memo, id) });
   } catch {
     return res.status(500).json({ error: 'Failed to process notes request.' });
   }
