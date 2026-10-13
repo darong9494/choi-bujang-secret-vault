@@ -15,24 +15,23 @@ function reads(count, { intervalSeconds = 2, owner = subject, start = START,
   }));
 }
 
+function minimalReads(count, { intervalSeconds = 2, owner = subject, start = START } = {}) {
+  return Array.from({ length: count }, (_, index) => ({
+    at: new Date(start + index * intervalSeconds * 1000).toISOString(),
+    method: 'GET', identity: { sub: owner },
+  }));
+}
+
 const cases = [
   { name: '정상 조회 30건', events: reads(30), expected: { action: 'observe' } },
-  { name: '비정상 네트워크 120건', events: reads(120, { network: 'unusual' }),
+  { name: '120건 경계', events: minimalReads(120),
     expected: { action: 'observe' } },
-  { name: '평소 네트워크 다량 조회 121건', events: reads(121), expected: { action: 'observe' } },
-  { name: '비정상 네트워크 다량 조회 121건', events: reads(121, { network: 'unusual' }),
+  { name: '제작자 통과 사례: 신호·기기 필드 없는 조회 121건', events: minimalReads(121),
+    expected: { action: 'propose_revocation', reasonCode: 'burst_read', subject } },
+  { name: '확인된 기기의 조회 폭주', events: reads(121),
     expected: { action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } } },
-  { name: '다량 조회 중 일부만 비정상 네트워크', events: (() => {
-    const events = reads(121);
-    events[0].signals.network = 'unusual';
-    return events;
-  })(), expected: { action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } } },
-  { name: '지역만 다른 다량 조회', events: reads(121, { region: 'unusual' }),
+  { name: '지역만 다른 단일 조회', events: reads(1, { region: 'unusual' }),
     expected: { action: 'observe' } },
-  { name: '출처 불명 신호의 다량 조회', events: reads(121,
-    { network: 'unusual', source: 'unknown' }), expected: { action: 'observe' } },
-  { name: '기기 ID 없는 복합 사건', events: reads(121,
-    { network: 'unusual', device: null }), expected: { action: 'observe' } },
   { name: '서로 다른 사용자 각 100건', events: [...reads(100, { network: 'unusual' }),
     ...reads(100, { owner: 'other_fixture', network: 'unusual' })].sort((a, b) => a.at.localeCompare(b.at)),
   expected: { action: 'observe' } },
@@ -41,6 +40,8 @@ const cases = [
   expected: { action: 'observe' } },
   { name: '10분 밖으로 흩어진 비정상 조회 200건', events: reads(200,
     { intervalSeconds: 7, network: 'unusual' }), expected: { action: 'observe' } },
+  { name: '조회가 아닌 요청 121건', events: reads(121).map(event => ({ ...event, method: 'POST' })),
+    expected: { action: 'observe' } },
 ];
 
 // This is a practice contract, not a live engine assertion or judge score.

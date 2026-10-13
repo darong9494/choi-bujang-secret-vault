@@ -9,38 +9,30 @@ export function detect(events) {
   const readsByIdentityAndDevice = new Map();
   for (const event of events) {
     const subject = event?.identity?.sub;
-    const deviceId = event?.deviceId;
     const at = typeof event?.at === 'string' ? Date.parse(event.at) : Number.NaN;
-    const hasFixtureSignals = event?.signals?.source === 'judge_fixture'
-      && ['usual', 'unusual'].includes(event.signals.network);
+    const suppliedDeviceId = event?.deviceId;
+    const deviceId = typeof suppliedDeviceId === 'string'
+      && /^[a-f0-9]{16}$/u.test(suppliedDeviceId) ? suppliedDeviceId : null;
 
-    if (!hasFixtureSignals || event.method !== 'GET'
-        || typeof subject !== 'string' || !subject.trim()
-        || typeof deviceId !== 'string' || !/^[a-f0-9]{16}$/u.test(deviceId)
+    if (event?.method !== 'GET' || typeof subject !== 'string' || !subject.trim()
         || !Number.isFinite(at)) continue;
 
-    const key = `${subject}\u0000${deviceId}`;
-    const reads = readsByIdentityAndDevice.get(key) ?? { deviceId, events: [] };
-    reads.events.push({ at, unusualNetwork: event.signals.network === 'unusual' });
+    const key = `${subject}\u0000${deviceId ?? ''}`;
+    const reads = readsByIdentityAndDevice.get(key) ?? { subject, deviceId, timestamps: [] };
+    reads.timestamps.push(at);
     readsByIdentityAndDevice.set(key, reads);
   }
 
-  for (const { deviceId, events: reads } of readsByIdentityAndDevice.values()) {
-    reads.sort((a, b) => a.at - b.at);
+  for (const { subject, deviceId, timestamps } of readsByIdentityAndDevice.values()) {
+    timestamps.sort((a, b) => a - b);
     let first = 0;
-    let unusualNetworkCount = 0;
-    for (let last = 0; last < reads.length; last += 1) {
-      if (reads[last].unusualNetwork) unusualNetworkCount += 1;
-      while (reads[last].at - reads[first].at > WINDOW_MS) {
-        if (reads[first].unusualNetwork) unusualNetworkCount -= 1;
-        first += 1;
-      }
-      if (last - first + 1 > READ_LIMIT && unusualNetworkCount > 0) {
-        return {
-          action: 'propose_revocation',
-          reasonCode: 'burst_read',
-          target: { deviceId },
-        };
+    for (let last = 0; last < timestamps.length; last += 1) {
+      while (timestamps[last] - timestamps[first] >= WINDOW_MS) first += 1;
+      if (last - first + 1 > READ_LIMIT) {
+        const proposal = { action: 'propose_revocation', reasonCode: 'burst_read' };
+        if (deviceId) proposal.target = { deviceId };
+        else proposal.subject = subject;
+        return proposal;
       }
     }
   }

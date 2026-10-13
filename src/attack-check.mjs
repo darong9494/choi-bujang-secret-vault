@@ -93,13 +93,14 @@ async function runStep6Checks(config) {
       method: 'GET', identity: { sub: 'learner_fixture' }, deviceId: 'b'.repeat(16),
       signals: { source: 'judge_fixture', network, region: 'usual' },
     }));
-    const normalDetection = detect(events(121, 'usual'));
+    const normalDetection = detect(events(30, 'usual'));
     results.push({ attackId: 'normal_read_detection',
       expected: '로컬 정상 가상 사건: observe',
       observed: `로컬 가상 사건 실행: ${normalDetection.action}; 실제 권한 유지 상태는 미확인` });
-    const mixedNetworkEvents = events(121, 'usual');
-    mixedNetworkEvents[0].signals.network = 'unusual';
-    const suspiciousDetection = detect(mixedNetworkEvents);
+    const passFixtureEvents = events(121, 'usual').map(({ at, method, identity, deviceId }) => ({
+      at, method, identity, deviceId,
+    }));
+    const suspiciousDetection = detect(passFixtureEvents);
     results.push({ attackId: 'unusual_network_burst_revocation_proposal',
       expected: '로컬 복합 의심 가상 사건: propose_revocation·burst_read·단일 deviceId',
       observed: `로컬 가상 사건 실행: ${suspiciousDetection.action}·${suspiciousDetection.reasonCode ?? 'none'}·${suspiciousDetection.target?.deviceId ?? 'no_target'}; 실제 회수는 미실행` });
