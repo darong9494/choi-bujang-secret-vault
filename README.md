@@ -27,9 +27,13 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
 
 
-## 알려진 보안 약점
+## 6단계: 등록한 기기만 자료실에 들어옵니다
 
-`/api/notes`는 아직 인증·인가 검사를 하지 않는 공개 주소입니다. 누구나 URL에 직접 요청해 DB의 네 가상 메모를 받을 수 있습니다. 서버 전용 키는 보호되지만, API가 반환하는 메모는 공개 상태이며 다음 단계에서 접근 제어를 추가해야 합니다.
+`src/decider.mjs`의 `decide(request)`는 `docs/DECIDER_REQUEST.md`의 `aleph.decision.v1` 요청 중 엔진이 확인해 전달한 사용자 프로젝트 식별정보, 기기 ID·등록 여부, 서비스·메서드·경로만 사용합니다. 등록 여부가 `true`가 아니거나 확인된 식별정보·기기 ID가 유효하지 않으면 `deny`와 `device_not_registered`로 응답합니다. 등록된 기기의 허용된 자료 읽기 경로만 `allow`이며, 그 밖의 경로는 `starter_not_ready`로 거부합니다. 규칙 ID는 `device_registered`입니다.
+
+로컬 가상 요청 연습은 저장소 루트에서 `npm run decider:test`를 실행합니다. 이 스크립트는 등록 요청이 `allow`, 미등록 요청이 `deny`·`device_not_registered`인지 검사하며 화면에는 `통과 · 등록 기기의 정상 요청`과 `통과 · 미등록 기기의 가상 요청`을 표시합니다. 이 명령은 로컬 연습이며 운영 엔진 연결이나 심판 판정을 증명하지 않습니다.
+
+현재 `/api/notes`는 로그인 확인 후 로그인 사용자 소유의 메모를 읽고 씁니다. 하지만 이 API는 `decide()`를 호출하지 않으며, 엔진이 확인한 `deviceRegistered` 요청을 전달받는 연결도 없습니다. 따라서 6단계 판정기 규칙은 로컬 판정 요청에 구현되어 있지만 실제 `/api/notes` 접근에는 아직 적용되지 않습니다. 기존 자료실 주소와 브라우저 화면은 그대로입니다.
 
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
