@@ -1,6 +1,44 @@
-// 9단계에서 학생이 채우는 탐지 함수입니다. 이 기본값은 어떤 접속도 회수하지 않습니다.
-// 반 엔진이 검증한 사건만 전달해야 하며, 브라우저가 보낸 사용자 번호는 받지 않습니다.
+// 탐지 결과만 제안합니다. 실제 접속 회수는 이 함수에서 실행하지 않습니다.
+// 입력은 계약 형식의 로컬 가상 사건입니다. 브라우저 값으로 검증 상태를 만들지 않습니다.
+const WINDOW_MS = 10 * 60 * 1000;
+const READ_LIMIT = 120;
+
 export function detect(events) {
   if (!Array.isArray(events)) throw new TypeError('invalid_detection_events');
+
+  const suspiciousReads = new Map();
+  for (const event of events) {
+    const subject = event?.identity?.sub;
+    const deviceId = event?.deviceId;
+    const at = typeof event?.at === 'string' ? Date.parse(event.at) : Number.NaN;
+    const hasFixtureSignals = event?.signals?.source === 'judge_fixture'
+      && ['usual', 'unusual'].includes(event.signals.network);
+
+    if (!hasFixtureSignals || event.method !== 'GET'
+        || typeof subject !== 'string' || !subject.trim()
+        || typeof deviceId !== 'string' || !/^[a-f0-9]{16}$/u.test(deviceId)
+        || event.signals.network !== 'unusual' || !Number.isFinite(at)) continue;
+
+    const key = `${subject}\u0000${deviceId}`;
+    const timestamps = suspiciousReads.get(key) ?? { deviceId, timestamps: [] };
+    timestamps.timestamps.push(at);
+    suspiciousReads.set(key, timestamps);
+  }
+
+  for (const { deviceId, timestamps } of suspiciousReads.values()) {
+    timestamps.sort((a, b) => a - b);
+    let first = 0;
+    for (let last = 0; last < timestamps.length; last += 1) {
+      while (timestamps[last] - timestamps[first] > WINDOW_MS) first += 1;
+      if (last - first + 1 > READ_LIMIT) {
+        return {
+          action: 'propose_revocation',
+          reasonCode: 'burst_read',
+          target: { deviceId },
+        };
+      }
+    }
+  }
+
   return { action: 'observe' };
 }

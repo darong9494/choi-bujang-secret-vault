@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if ([6, 7, 8].includes(config.step)) return runStep6Checks(config);
+  if ([6, 7, 8, 9].includes(config.step)) return runStep6Checks(config);
   if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
@@ -84,6 +84,23 @@ async function runStep6Checks(config) {
     results.push({ attackId: 'engine_verified_step_up',
       expected: '엔진 검증 재로그인 시각이 유효한 가상 요청: allow·approved',
       observed: `로컬 가상 요청 실행: ${verifiedResponse.decision}·${verifiedResponse.reasonCode}; 실제 엔진 로그인 시각 검증은 미확인` });
+  }
+  if (config.step >= 9) {
+    const { detect } = await import('./detect.mjs');
+    const start = Date.UTC(2026, 9, 1, 0, 0, 0);
+    const events = (count, network) => Array.from({ length: count }, (_, index) => ({
+      at: new Date(start + index * 2000).toISOString(),
+      method: 'GET', identity: { sub: 'learner_fixture' }, deviceId: 'b'.repeat(16),
+      signals: { source: 'judge_fixture', network, region: 'usual' },
+    }));
+    const normalDetection = detect(events(121, 'usual'));
+    results.push({ attackId: 'normal_read_detection',
+      expected: '로컬 정상 가상 사건: observe',
+      observed: `로컬 가상 사건 실행: ${normalDetection.action}; 실제 권한 유지 상태는 미확인` });
+    const suspiciousDetection = detect(events(121, 'unusual'));
+    results.push({ attackId: 'unusual_network_burst_revocation_proposal',
+      expected: '로컬 복합 의심 가상 사건: propose_revocation·burst_read·단일 deviceId',
+      observed: `로컬 가상 사건 실행: ${suspiciousDetection.action}·${suspiciousDetection.reasonCode ?? 'none'}·${suspiciousDetection.target?.deviceId ?? 'no_target'}; 실제 회수는 미실행` });
   }
   return results;
 }
