@@ -1,14 +1,49 @@
-// ALEPH SDP 엔진이 확인한 요청만 받는 학생 판정기 시작점입니다.
-// 6단계부터 규칙을 하나씩 추가합니다. 이 기본 응답은 모든 요청을 거부합니다.
-// 요청 본문의 userId, role, 기기 키, 토큰을 별도로 믿거나 저장하지 마세요.
-export const RULE_IDS = Object.freeze(['starter.deny']);
+export const RULE_IDS = Object.freeze(['device_registered']);
+
+function hasVerifiedIdentityAndDevice(request) {
+  return request?.schema === 'aleph.decision.v1'
+    && typeof request.classId === 'string' && request.classId.trim().length > 0
+    && typeof request.projectId === 'string' && request.projectId.trim().length > 0
+    && typeof request.subjectId === 'string' && request.subjectId.trim().length > 0
+    && typeof request.deviceId === 'string' && /^[a-f0-9]{16}$/u.test(request.deviceId);
+}
+
+function isNotesRead(request) {
+  if (request?.service !== 'notes' || request.method !== 'GET') return false;
+  return [
+    ['GET /notes', /^\/notes$/u],
+    ['GET /notes/:id', /^\/notes\/[^/]+$/u],
+    ['GET /api/notes', /^\/api\/notes$/u],
+    ['GET /api/notes/:id', /^\/api\/notes\/[^/]+$/u],
+  ].some(([route, pathPattern]) => request.route === route && pathPattern.test(request.path));
+}
 
 export async function decide(request) {
+  if (request?.deviceRegistered !== true || !hasVerifiedIdentityAndDevice(request)) {
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request?.requestId,
+      decision: 'deny',
+      reasonCode: 'device_not_registered',
+      ruleIds: ['device_registered'],
+    };
+  }
+
+  if (!isNotesRead(request)) {
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request.requestId,
+      decision: 'deny',
+      reasonCode: 'starter_not_ready',
+      ruleIds: ['device_registered'],
+    };
+  }
+
   return {
     schema: 'aleph.decision.v1',
     requestId: request.requestId,
-    decision: 'deny',
-    reasonCode: 'starter_not_ready',
-    ruleIds: [RULE_IDS[0]],
+    decision: 'allow',
+    reasonCode: 'approved',
+    ruleIds: ['device_registered'],
   };
 }
