@@ -2,8 +2,6 @@ export const RULE_IDS = Object.freeze([
   'device_registered', 'resource_scope_access', 'step_up_required',
 ]);
 
-const NOTE_ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-
 function hasVerifiedIdentityAndDevice(request) {
   return request?.schema === 'aleph.decision.v1'
     && typeof request.classId === 'string' && request.classId.trim().length > 0
@@ -16,8 +14,11 @@ function isAuthorizedNoteAction(request) {
   if (request?.service !== 'notes') return false;
   if (!['GET', 'PUT'].includes(request.method)) return false;
   for (const basePath of ['/api/notes', '/notes']) {
+    const prefix = `${basePath}/`;
+    const id = typeof request.path === 'string' && request.path.startsWith(prefix)
+      ? request.path.slice(prefix.length) : '';
     if (request.route === `${request.method} ${basePath}/:id`
-        && new RegExp(`^${basePath}/${NOTE_ID}$`, 'iu').test(request.path)) return true;
+        && id.length > 0 && id !== '.' && id !== '..' && !/[/?#]/u.test(id)) return true;
   }
   return false;
 }
