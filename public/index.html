@@ -344,7 +344,7 @@
         if (Object.keys(counts).some(key => counts[key] !== snapshot.totals?.[key])) {
           throw new Error('화면 수치와 서버 기록이 일치하지 않습니다.');
         }
-        const labels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행' };
+        const labels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행 또는 응답 미확인' };
         checkRecords.replaceChildren(...snapshot.checks.map(check => {
           const item = document.createElement('li');
           const title = document.createElement('strong');

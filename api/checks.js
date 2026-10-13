@@ -14,7 +14,8 @@ function summarize(attempts) {
   const checks = attempts.map(attempt => {
     const status = /^HTTP (\d{3})(?:;|$)/u.exec(attempt.observed);
     const id = /; requestId=([a-zA-Z0-9:._-]{1,100})(?:;|$)/u.exec(attempt.observed);
-    const source = attempt.result === 'not_run' ? '요청 미실행'
+    const source = attempt.observed === 'network_error' ? '요청 후 응답 확인 실패'
+      : attempt.result === 'not_run' ? '요청 미실행'
       : fixtureIds.has(attempt.attackId) ? '학생 판정기·탐지 가상 연습' : '배포 API 실측';
     return { id: attempt.attackId, stage: attempt.stage, title: attempt.expected,
       source, result: attempt.result, observed: attempt.observed,

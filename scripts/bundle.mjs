@@ -83,7 +83,7 @@ try {
         || !['blocked', 'breached', 'not_run'].includes(attempt.result)
         || typeof attempt.expected !== 'string' || !attempt.expected.trim() || attempt.expected.length > 300
         || typeof attempt.observed !== 'string' || !attempt.observed.trim() || attempt.observed.length > 300
-        || (attempt.result === 'not_run' && attempt.observed !== 'not_run')
+        || (attempt.result === 'not_run' && !['not_run', 'network_error'].includes(attempt.observed))
         || (attempt.result !== 'not_run' && !/^HTTP \d{3}(?:;|$)/u.test(attempt.observed))) {
       fail('공격 점검 결과에는 attackId·stage·expected·observed·result를 정확히 넣어 주세요.');
     }

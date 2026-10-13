@@ -27,7 +27,7 @@
 
 ## 12단계 자기 점검과 작전실
 
-`src/attack-check.mjs`는 각 `attackId`당 실제 `fetch` 한 번을 보냅니다. `alephEvidence`의 `caseId`와 `requestKey`는 점검 실행기의 연결 정보이며 HTTP 헤더·URL에 넣지 않습니다. 응답을 받으면 `HTTP 상태`, 본문 바이트 수와 제공된 요청 ID만 기록합니다. 요청을 보내지 못했거나 엔진 연결이 없어 실행하지 못한 항목은 `observed: "not_run"`, `result: "not_run"`입니다. 고정 가상 입력은 `/api/checks?case=...`를 통해 학생 판정기·탐지 코드가 실행하고, 출처를 `학생 판정기·탐지 가상 연습`으로 표시합니다.
+`src/attack-check.mjs`는 각 `attackId`당 실제 `fetch` 한 번을 보냅니다. `alephEvidence`의 `caseId`와 `requestKey`는 점검 실행기의 연결 정보이며 HTTP 헤더·URL에 넣지 않습니다. 응답을 받으면 `HTTP 상태`, 본문 바이트 수와 제공된 요청 ID만 기록합니다. 요청했으나 응답을 확인하지 못하면 `observed: "network_error"`, `result: "not_run"`으로 기록합니다. 엔진 연결이 없어 요청 자체를 보내지 않은 항목만 `observed: "not_run"`, `result: "not_run"`입니다. 고정 가상 입력은 `/api/checks?case=...`를 통해 학생 판정기·탐지 코드가 실행하고, 출처를 `학생 판정기·탐지 가상 연습`으로 표시합니다.
 
 | 종류 | 확인하는 것 | 출처 |
 |---|---|---|

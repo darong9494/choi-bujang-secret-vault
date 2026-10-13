@@ -23,7 +23,8 @@ async function probe(base, path, attackId, headers = {}) {
 }
 
 function recorded(attackId, stage, expected, response, accepts) {
-  if (!response.ran) return { attackId, stage, expected, observed: 'not_run', result: 'not_run' };
+  // fetch was called, but no response could be verified. Keep this distinct from an unsent check.
+  if (!response.ran) return { attackId, stage, expected, observed: 'network_error', result: 'not_run' };
   const observed = `HTTP ${response.status}; bodyBytes=${response.bodyBytes}`
     + (typeof response.ready === 'boolean' ? `; jsonReady=${response.ready}` : '')
     + (response.requestId ? `; requestId=${response.requestId}` : '');
