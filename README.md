@@ -49,6 +49,14 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 
 현재 제공 계약은 `stepUp.verified`와 `authAgeSeconds` 필드만 정의하며, 같은 로그인 사용자의 새 로그인 확인을 자료 API까지 강제하는 연결은 확인되지 않았습니다. `/api/notes`와 `/api/notes/:id`는 `decide()`를 호출하지 않으므로 추가 확인 전 자료 차단 및 새 로그인 뒤 허용은 미실행입니다. 실제 엔진 연동 전에는 로컬 가상 사건만 확인합니다.
 
+## 8단계: 자료마다 갈 수 있는 구역을 나눕니다
+
+`resource_scope_access`는 엔진이 확인한 주체·등록 기기 조건을 통과한 `notes` 서비스 요청 중 정해진 메서드와 경로 조합만 판정합니다. 컬렉션은 `GET`·`POST /api/notes`, 항목은 `GET`·`PUT`·`DELETE /api/notes/:id`이며 항목 경로의 ID는 UUID 형식이어야 합니다. 판정기에는 기존 `/notes` 경로 별칭도 남아 있습니다. 다른 서비스·메서드·경로 조합은 `deny · starter_not_ready`입니다. 기존 `device_registered`와 `step_up_required` 규칙도 유지합니다.
+
+현재 자료 API는 로그인한 Supabase 사용자 ID로 목록을 소유자 필터링하고, 개별 메모의 조회·수정·삭제에서도 소유자를 확인합니다. 하지만 `/api/notes`와 `/api/notes/:id`는 `decide()`를 호출하지 않으므로 `resource_scope_access` 판정이 실제 API 권한 검사로 전달되지는 않습니다. 판정 요청 계약과 자료 스키마에는 강사 역할이나 공지 구역도 없어서 이를 임의로 허용하지 않습니다.
+
+로컬 판정기 연습은 저장소 루트에서 `npm run decider:test`로 실행합니다. 이는 가상 요청 확인이며, 기존 fixture는 등록 기기 노트 읽기, 미등록 기기 거부, 복합 이상 접속의 추가 확인을 확인합니다. 실제 API의 역할별 구역 분리나 판정기 연동을 증명하지 않습니다.
+
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
