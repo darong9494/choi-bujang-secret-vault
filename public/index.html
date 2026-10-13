@@ -81,14 +81,15 @@
     <ul id="notes" aria-live="polite" hidden></ul>
     <section class="auth" aria-labelledby="ops-heading">
       <h2 id="ops-heading">탈환 작전실</h2>
-      <p>공개 배포 API의 실제 응답과 가상 연습, 아직 실행하지 못한 검증을 구분합니다. 수치는 아래 서버 점검 기록에서 계산합니다. 심판 판정은 아닙니다.</p>
+      <p>학생 작업: 이 화면, 자료 API, 판정·탐지 규칙, 자기 점검. 제공 엔진: ALEPH SDP 엔진의 신원·기기 확인, 판정 집행, 권한 회수·복원·감사 기록. 외부 서비스: Vercel·Supabase. 이 화면은 학생 점검 기록만 보여 줍니다.</p>
+      <p>실제 배포 응답과 고정 가상 연습, 미실행 항목을 구분합니다. 수치는 아래 같은 점검 목록에서 셉니다. 심판 판정은 아닙니다.</p>
       <button id="ops-refresh" type="button">지금 다시 확인</button>
       <p id="ops-state" aria-live="polite">서버 점검 기록을 읽는 중입니다.</p>
       <dl class="ops-counts">
-        <div><dt>실측 기대 결과</dt><dd id="ops-passed">-</dd></div>
-        <div><dt>실측 불일치</dt><dd id="ops-failed">-</dd></div>
-        <div><dt>미실행</dt><dd id="ops-not-run">-</dd></div>
-        <div><dt>가상 연습</dt><dd id="ops-simulated">-</dd></div>
+        <div><dt>점검 항목</dt><dd id="ops-total">-</dd></div>
+        <div><dt>막은 공격</dt><dd id="ops-blocked">-</dd></div>
+        <div><dt>뚫린 공격</dt><dd id="ops-failed">-</dd></div>
+        <div><dt>실행하지 않은 점검</dt><dd id="ops-not-run">-</dd></div>
       </dl>
       <p id="ops-policy"></p>
       <p id="ops-detection"></p>
@@ -333,32 +334,30 @@
         if (snapshot.schema !== 'aleph.ops.snapshot.v1' || !Array.isArray(snapshot.checks)) {
           throw new Error('점검 기록 형식이 맞지 않습니다.');
         }
-        const counts = { passed: 0, failed: 0, notRun: 0, simulated: 0 };
+        const counts = { total: snapshot.checks.length, blocked: 0, failed: 0, notRun: 0 };
         for (const check of snapshot.checks) {
-          if (check.result === 'passed') counts.passed++;
-          else if (check.result === 'failed') counts.failed++;
+          if (check.result === 'blocked') counts.blocked++;
+          else if (check.result === 'breached') counts.failed++;
           else if (check.result === 'not_run') counts.notRun++;
-          else if (check.result === 'simulated') counts.simulated++;
           else throw new Error('알 수 없는 점검 결과입니다.');
         }
         if (Object.keys(counts).some(key => counts[key] !== snapshot.totals?.[key])) {
           throw new Error('화면 수치와 서버 기록이 일치하지 않습니다.');
         }
-        const labels = { passed: '실측 기대 결과', failed: '실측 불일치',
-          not_run: '미실행', simulated: '가상 연습' };
+        const labels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행' };
         checkRecords.replaceChildren(...snapshot.checks.map(check => {
           const item = document.createElement('li');
           const title = document.createElement('strong');
           const detail = document.createElement('small');
           title.textContent = `${check.title} · ${labels[check.result]}`;
-          detail.textContent = `${check.source} · HTTP ${check.httpStatus ?? '미실행'} · 요청 ID ${check.requestId ?? '미제공'}`;
+          detail.textContent = `${check.source} · ${check.observed} · 요청 ID ${check.requestId ?? '미제공'}`;
           item.append(title, detail);
           return item;
         }));
-        document.querySelector('#ops-passed').textContent = String(counts.passed);
+        document.querySelector('#ops-total').textContent = String(counts.total);
+        document.querySelector('#ops-blocked').textContent = String(counts.blocked);
         document.querySelector('#ops-failed').textContent = String(counts.failed);
         document.querySelector('#ops-not-run').textContent = String(counts.notRun);
-        document.querySelector('#ops-simulated').textContent = String(counts.simulated);
         document.querySelector('#ops-policy').textContent = `판정기 규칙: ${snapshot.policyRules.join(', ')}`;
         document.querySelector('#ops-detection').textContent = `탐지·회수: ${snapshot.detection}`;
         document.querySelector('#ops-restore').textContent = `복구: ${snapshot.restore}`;

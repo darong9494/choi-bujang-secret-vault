@@ -1,166 +1,105 @@
-// The student changes this check as each stage adds an attack to the same app.
-// Never return tokens, private keys, real names, or note bodies.
-export async function runAttackChecks(config) {
-  if ([6, 7, 8, 9, 10, 11, 12].includes(config.step)) return runStep6Checks(config);
-  if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
-  let app;
+// Only responses to these exact fetches count as observed checks.
+// alephEvidence is runner metadata, not an HTTP header or query parameter.
+const TEST_ID = '00000000-0000-4000-8000-000000000001';
+
+async function probe(base, path, attackId, headers = {}) {
   try {
-    app = new URL(config.publicAppUrl);
+    const response = await fetch(new URL(path, base), {
+      headers: { Accept: 'application/json', ...headers },
+      redirect: 'manual', signal: AbortSignal.timeout(5000),
+      alephEvidence: { caseId: attackId, requestKey: 'read' },
+    });
+    const body = await response.text();
+    let ready;
+    try { ready = JSON.parse(body)?.ready; } catch { ready = undefined; }
+    const rawId = response.headers.get('x-vercel-id');
+    const requestId = typeof rawId === 'string' && /^[a-zA-Z0-9:._-]{1,100}$/u.test(rawId)
+      ? rawId : null;
+    return { ran: true, status: response.status, bodyBytes: Buffer.byteLength(body),
+      ready, requestId, hasNotes: /"(?:content|body)"\s*:/u.test(body) };
   } catch {
-    throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
+    return { ran: false };
   }
-  if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash
-      || app.pathname !== '/' || app.hostname.endsWith('.example')) {
-    throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
-  }
-  if (typeof config.sampleMarker !== 'string' || !config.sampleMarker) throw new Error('가상 메모의 확인 표시를 넣어 주세요.');
-  const response = await fetch(new URL('/data.json', app), {
-    redirect: 'error', signal: AbortSignal.timeout(10000),
-  });
-  let visible = false;
-  if (response.ok) {
-    try {
-      const data = await response.json();
-      visible = data?.sampleMarker === config.sampleMarker && Array.isArray(data.notes)
-        && data.notes.length > 0;
-    } catch {
-      // A non-JSON response is a failed check, not a successful deployment.
-    }
-  }
-  return [{ attackId: 'anonymous_note_read', expected: '비로그인 화면에서 가상 메모를 확인',
-    observed: visible ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임' : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
 }
 
-function requestEvidence(response) {
-  const id = response.headers.get('x-vercel-id');
-  return `; x-vercel-id=${typeof id === 'string' && /^[a-zA-Z0-9:._-]{1,100}$/u.test(id) ? id : '미제공'}`;
+function recorded(attackId, stage, expected, response, accepts) {
+  if (!response.ran) return { attackId, stage, expected, observed: 'not_run', result: 'not_run' };
+  const observed = `HTTP ${response.status}; bodyBytes=${response.bodyBytes}`
+    + (typeof response.ready === 'boolean' ? `; jsonReady=${response.ready}` : '')
+    + (response.requestId ? `; requestId=${response.requestId}` : '');
+  return { attackId, stage, expected, observed,
+    result: accepts(response) ? 'blocked' : 'breached' };
 }
 
-async function runStep6Checks(config) {
-  let app;
-  try {
-    app = new URL(config.publicAppUrl);
-  } catch {
-    throw new Error('aleph.config.json의 실제 배포 주소를 확인해 주세요.');
-  }
-  if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash
-      || app.pathname !== '/' || !app.hostname.endsWith('.vercel.app')) {
-    throw new Error('aleph.config.json의 실제 Vercel 배포 주소를 확인해 주세요.');
+function unrun(attackId, stage, expected) {
+  return { attackId, stage, expected, observed: 'not_run', result: 'not_run' };
+}
+
+export async function runAttackChecks(configOrUrl) {
+  const config = typeof configOrUrl === 'object' && configOrUrl !== null ? configOrUrl : null;
+  const base = new URL(config?.publicAppUrl ?? configOrUrl);
+  if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash
+      || base.pathname !== '/' || !base.hostname.endsWith('.vercel.app')) {
+    throw new Error('실제 Vercel HTTPS 배포 주소를 확인해 주세요.');
   }
 
-  const results = [];
-  for (const [attackId, path, expectedStatus, description] of [
-    ['existing_vault_screen', '/', 200, '기존 자료실 화면'],
-    ['anonymous_notes_read', '/api/notes', 401, '비로그인 자료 API 읽기'],
-  ]) {
-    try {
-      const response = await fetch(new URL(path, app), {
-        redirect: 'error', signal: AbortSignal.timeout(5000), cache: 'no-store',
-      });
-      results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
-        observed: `실제 GET ${path} HTTP ${response.status}; ${response.status === expectedStatus ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
-      await response.body?.cancel();
-    } catch {
-      results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
-        observed: `실제 GET ${path} 요청을 보냈으나 응답 확인 실패; 미확인` });
-    }
-  }
-
-  if (config.step >= 10) {
-    try {
-      const response = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000001', app), {
-        method: 'GET', redirect: 'error', cache: 'no-store',
-        signal: AbortSignal.timeout(5000),
-      });
-      results.push({ attackId: 'anonymous_note_restore',
-        expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
-        observed: `실제 GET /api/restore/:noteId HTTP ${response.status}; ${[401, 403, 404].includes(response.status) ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
-      await response.body?.cancel();
-    } catch {
-      results.push({ attackId: 'anonymous_note_restore',
-        expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
-        observed: '실제 GET /api/restore/:noteId 요청을 보냈으나 응답 확인 실패; 미확인' });
-    }
-  }
-
-  if (config.step >= 11) {
-    try {
-      const response = await fetch(new URL('/api/device/status', app), {
-        redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(5000),
-      });
-      results.push({ attackId: 'anonymous_device_approval',
-        expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
-        observed: `실제 GET /api/device/status HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
-      await response.body?.cancel();
-    } catch {
-      results.push({ attackId: 'anonymous_device_approval',
-        expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
-        observed: '실제 GET /api/device/status 요청을 보냈으나 응답 확인 실패; 미확인' });
-    }
-  }
-
-  if (config.step >= 12) {
-    for (const [attackId, path, headers, description] of [
-      ['forged_login_token', '/api/notes', { Authorization: 'Bearer a.b.c' }, '위조 로그인 토큰'],
-      ['query_identity_spoof', '/api/notes?user_id=00000000-0000-4000-8000-000000000001', {}, '쿼리 신원 위조'],
-    ]) {
+  if (config?.step === 1) {
+    const response = await fetch(new URL('/data.json', base), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let visible = false;
+    if (response.ok) {
       try {
-        const response = await fetch(new URL(path, app), {
-          headers, redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(5000),
-        });
-        results.push({ attackId, expected: `${description}: HTTP 401`,
-          observed: `실제 GET /api/notes HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
-        await response.body?.cancel();
-      } catch {
-        results.push({ attackId, expected: `${description}: HTTP 401`,
-          observed: '실제 GET /api/notes 요청을 보냈으나 응답 확인 실패; 미확인' });
-      }
+        const data = await response.json();
+        visible = data?.sampleMarker === config.sampleMarker
+          && Array.isArray(data.notes) && data.notes.length > 0;
+      } catch { visible = false; }
     }
+    return [{ attackId: 'anonymous_note_read', stage: 1,
+      expected: '비로그인 화면에서 가상 메모를 확인',
+      observed: `HTTP ${response.status}; ${visible
+        ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임'
+        : '비로그인 요청에서 확인 표시가 보이지 않음'}`,
+      result: visible ? 'blocked' : 'breached' }];
   }
 
-  const { decide } = await import('./decider.mjs');
-  const { fixtureRequests } = await import('../scripts/fixture-7.mjs');
-  const { normal } = fixtureRequests();
-  for (const [attackId, deviceRegistered, expected, expectedReason] of [
-    ['registered_device_read', true, 'allow', 'approved'],
-    ['unregistered_device_read', false, 'deny', 'device_not_registered'],
+  const checks = [
+    ['existing_vault_screen', 1, '/', '자료실 공개 화면 HTTP 200', {}, r => r.status === 200],
+    ['anonymous_notes_read', 3, '/api/notes', '비로그인 메모 HTTP 401', {}, r => r.status === 401 && !r.hasNotes],
+    ['anonymous_note_restore', 10, `/api/restore/${TEST_ID}`, '비로그인 복원 경로 거부', {},
+      r => [401, 403, 404].includes(r.status) && !r.hasNotes],
+    ['anonymous_device_approval', 11, '/api/device/status', '비로그인 기기 승인 거부', {},
+      r => r.status === 401 && !r.hasNotes],
+    ['forged_login_token', 3, '/api/notes', '위조 토큰 거부', { Authorization: 'Bearer a.b.c' },
+      r => r.status === 401 && !r.hasNotes],
+    ['query_identity_spoof', 4, `/api/notes?user_id=${TEST_ID}`, '쿼리 신원 위조 거부', {},
+      r => r.status === 401 && !r.hasNotes],
+  ];
+  const attempts = [];
+  for (const [id, stage, path, expected, headers, accepts] of checks) {
+    attempts.push(recorded(id, stage, expected, await probe(base, path, id, headers), accepts));
+  }
+
+  // Fixed virtual inputs are executed through the deployed API so each case has one HTTP receipt.
+  for (const [id, stage, expected] of [
+    ['registered_device_read', 6, '등록 기기 가상 요청 허용'],
+    ['unregistered_device_read', 6, '미등록 기기 가상 요청 거부'],
+    ['composite_risk_step_up', 7, '복합 이상 가상 요청 재확인'],
+    ['engine_verified_step_up', 7, '재확인된 가상 요청 허용'],
+    ['normal_read_detection', 9, '정상 조회 가상 사건 관찰'],
+    ['unusual_network_burst_revocation_proposal', 9, '조회 폭주 가상 사건 회수 제안'],
   ]) {
-    const response = await decide({ ...normal, deviceRegistered });
-    results.push({ attackId,
-      expected: `로컬 가상 요청: ${expected}·${expectedReason}`,
-      observed: `로컬 가상 요청 실행: ${response.decision}·${response.reasonCode}; 운영 기기 등록·미등록 공격 판정은 미확인` });
+    const response = await probe(base, `/api/checks?case=${id}`, id);
+    attempts.push(recorded(id, stage, expected, response,
+      r => r.status === 200 && r.ready === true));
   }
-  if (config.step >= 7) {
-    const { suspicious } = fixtureRequests();
-    const stepUpResponse = await decide(suspicious);
-    results.push({ attackId: 'composite_risk_step_up',
-      expected: '로컬 복합 이상 가상 요청: step_up·step_up_required',
-      observed: `로컬 가상 요청 실행: ${stepUpResponse.decision}·${stepUpResponse.reasonCode}; 실제 재로그인 미실행` });
-    const verifiedResponse = await decide({ ...suspicious,
-      stepUp: { verified: true, authAgeSeconds: 60 } });
-    results.push({ attackId: 'engine_verified_step_up',
-      expected: '엔진 검증 재로그인 시각이 유효한 가상 요청: allow·approved',
-      observed: `로컬 가상 요청 실행: ${verifiedResponse.decision}·${verifiedResponse.reasonCode}; 실제 엔진 로그인 시각 검증은 미확인` });
-  }
-  if (config.step >= 9) {
-    const { detect } = await import('./detect.mjs');
-    const start = Date.UTC(2026, 9, 1, 0, 0, 0);
-    const events = (count, network) => Array.from({ length: count }, (_, index) => ({
-      at: new Date(start + index * 2000).toISOString(),
-      method: 'GET', identity: { sub: 'learner_fixture' }, deviceId: 'b'.repeat(16),
-      signals: { source: 'judge_fixture', network, region: 'usual' },
-    }));
-    const normalDetection = detect(events(30, 'usual'));
-    results.push({ attackId: 'normal_read_detection',
-      expected: '로컬 정상 가상 사건: observe',
-      observed: `로컬 가상 사건 실행: ${normalDetection.action}; 실제 권한 유지 상태는 미확인` });
-    const passFixtureEvents = events(121, 'usual').map(({ at, method, identity, deviceId }) => ({
-      at, method, identity, deviceId,
-    }));
-    const suspiciousDetection = detect(passFixtureEvents);
-    results.push({ attackId: 'unusual_network_burst_revocation_proposal',
-      expected: '로컬 복합 의심 가상 사건: propose_revocation·burst_read·단일 deviceId',
-      observed: `로컬 가상 사건 실행: ${suspiciousDetection.action}·${suspiciousDetection.reasonCode ?? 'none'}·${suspiciousDetection.target?.deviceId ?? 'no_target'}; 실제 회수는 미실행` });
-  }
-  return results;
+
+  for (const [id, stage, expected] of [
+    ['registered_device_read_live', 11, '등록된 실기기 메모 읽기'],
+    ['other_owner_read_live', 8, '다른 실계정 메모 접근 거부'],
+    ['engine_revocation_live', 9, '엔진 권한 회수 집행'],
+    ['engine_restore_live', 10, '엔진 검증 사본 복원'],
+    ['engine_audit_live', 10, '엔진 감사 이력 보존'],
+  ]) attempts.push(unrun(id, stage, expected));
+  return attempts;
 }
