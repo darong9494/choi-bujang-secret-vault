@@ -63,20 +63,18 @@ async function runStep6Checks(config) {
 
   if (config.step >= 10) {
     try {
-      const response = await fetch(new URL('/api/restore', app), {
+      const response = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000001', app), {
         method: 'POST', redirect: 'error', cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: '00000000-0000-4000-8000-000000000001' }),
         signal: AbortSignal.timeout(5000),
       });
       results.push({ attackId: 'anonymous_note_restore',
         expected: '비로그인 복구 요청: HTTP 401',
-        observed: `실제 POST /api/restore HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `실제 POST /api/restore/:noteId HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId: 'anonymous_note_restore',
         expected: '비로그인 복구 요청: HTTP 401',
-        observed: '실제 POST /api/restore 요청을 보냈으나 응답 확인 실패; 미확인' });
+        observed: '실제 POST /api/restore/:noteId 요청을 보냈으나 응답 확인 실패; 미확인' });
     }
   }
 

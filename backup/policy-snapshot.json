@@ -1,0 +1,19 @@
+{
+  "schema": "aleph.policy.snapshot.v1",
+  "policyRevision": 9,
+  "verifiedCommit": "657381cbfdd74d17dffc5d0a2a38f314278e8ff5",
+  "note": "침해 전 검증된 정책 사본. 비밀값과 메모 내용은 포함하지 않습니다.",
+  "allowedRoutes": [
+    "POST /api/auth",
+    "GET /api/notes",
+    "POST /api/notes",
+    "GET /api/notes/:id",
+    "PUT /api/notes/:id",
+    "DELETE /api/notes/:id"
+  ],
+  "files": {
+    "src/decider.mjs": "9fe62563-4ade35ee-598d65d7-2246cb46-a948e00a-08293fad-adaf06a8-d6358f7a",
+    "src/detect.mjs": "008342fa-3a1f9283-2aab3b7d-3d4c6c44-f30a8a5a-532c5ae3-9b322be3-d5635fcf"
+  },
+  "sha256": "fdb9992e-29c18a1e-21574b38-266fd841-9935fdd7-e4a3d43d-b450b83a-be021fba"
+}
