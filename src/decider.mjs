@@ -28,9 +28,12 @@ function isAuthorizedNoteAction(request) {
 
 function hasValidRiskInput(request) {
   const signals = request?.signals;
-  if (!signals || signals.source !== 'judge_fixture'
-      || typeof signals.region !== 'string' || signals.region.trim().length === 0
-      || !['usual', 'unusual'].includes(signals.network)
+  const engineHasNoSignals = signals?.source === 'none'
+    && signals.region === 'unknown' && signals.network === 'unknown';
+  const fixtureHasSignals = signals?.source === 'judge_fixture'
+    && typeof signals.region === 'string' && signals.region.trim().length > 0
+    && ['usual', 'unusual'].includes(signals.network);
+  if ((!engineHasNoSignals && !fixtureHasSignals)
       || !Number.isInteger(signals.hour) || signals.hour < 0 || signals.hour > 23
       || !Array.isArray(request.recentEvents) || request.recentEvents.length > 12) {
     return false;
