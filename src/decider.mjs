@@ -18,6 +18,20 @@ function isNotesRead(request) {
   ].some(([route, pathPattern]) => request.route === route && pathPattern.test(request.path));
 }
 
+function hasValidRiskInput(request) {
+  const signals = request?.signals;
+  if (!signals || signals.source !== 'judge_fixture'
+      || typeof signals.region !== 'string' || signals.region.trim().length === 0
+      || !['usual', 'unusual'].includes(signals.network)
+      || !Number.isInteger(signals.hour) || signals.hour < 0 || signals.hour > 23
+      || !Array.isArray(request.recentEvents) || request.recentEvents.length > 12) {
+    return false;
+  }
+  return request.recentEvents.every(event => event && typeof event.kind === 'string'
+    && Number.isInteger(event.ageSeconds) && event.ageSeconds >= 0
+    && Number.isInteger(event.count) && event.count >= 0);
+}
+
 function hasCompositeRisk(request) {
   const signals = request?.signals;
   const hour = signals?.hour;
@@ -56,6 +70,16 @@ export async function decide(request) {
       decision: 'deny',
       reasonCode: 'starter_not_ready',
       ruleIds: ['device_registered'],
+    };
+  }
+
+  if (!hasValidRiskInput(request)) {
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request.requestId,
+      decision: 'deny',
+      reasonCode: 'starter_not_ready',
+      ruleIds: ['device_registered', 'step_up_required'],
     };
   }
 
