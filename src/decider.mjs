@@ -14,13 +14,9 @@ function hasVerifiedIdentityAndDevice(request) {
 
 function isAuthorizedNoteAction(request) {
   if (request?.service !== 'notes') return false;
-  const collectionPaths = ['/api/notes', '/notes'];
-  for (const basePath of collectionPaths) {
-    if (['GET', 'POST'].includes(request.method)
-        && request.route === `${request.method} ${basePath}`
-        && request.path === basePath) return true;
-    if (['GET', 'PUT', 'DELETE'].includes(request.method)
-        && request.route === `${request.method} ${basePath}/:id`
+  if (!['GET', 'PUT'].includes(request.method)) return false;
+  for (const basePath of ['/api/notes', '/notes']) {
+    if (request.route === `${request.method} ${basePath}/:id`
         && new RegExp(`^${basePath}/${NOTE_ID}$`, 'iu').test(request.path)) return true;
   }
   return false;
