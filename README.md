@@ -41,6 +41,12 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 
 현재 `/api/notes`는 로그인 확인 후 로그인 사용자 소유의 메모를 읽고 씁니다. 하지만 이 API는 `decide()`를 호출하지 않으며, 엔진이 확인한 `deviceRegistered` 요청을 전달받는 연결도 없습니다. 따라서 6단계 판정기 규칙은 로컬 판정 요청에 구현되어 있지만 실제 `/api/notes` 접근에는 아직 적용되지 않습니다. 기존 자료실 주소와 브라우저 화면은 그대로입니다.
 
+## 7단계: 복합 이상 접속은 다시 확인합니다
+
+`step_up_required` 규칙은 엔진 요청의 최근 `risk_signal` 사건(300초 이내·횟수 10 이상), 비정상 네트워크, 이른/늦은 시각(0~5시 또는 23시)이 함께 있을 때 `step_up`을 요청합니다. 지역 값만으로는 거부하거나 추가 확인을 요구하지 않습니다. 요청의 `stepUp.verified`가 참이고 엔진이 확인한 `authAgeSeconds`가 0~900초일 때만 이 가상 조합을 통과시킵니다.
+
+로컬 가상 연습은 `npm run decider:test`입니다. 정상 조합은 `allow`, 복합 이상 조합은 `step_up · step_up_required`, 엔진 검증 재로그인 시각이 있는 가상 요청은 `allow`여야 합니다. 브라우저 위치는 사용하지 않으며, 실제 재로그인 검증은 제공 엔진이 확인한 시각이 전달될 때만 시험할 수 있습니다. 이 연습은 운영 엔진 접속이나 심판 판정이 아닙니다.
+
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.

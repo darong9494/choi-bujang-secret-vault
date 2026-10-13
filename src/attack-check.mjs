@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (config.step === 6) return runStep6Checks(config);
+  if ([6, 7].includes(config.step)) return runStep6Checks(config);
   if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
@@ -72,6 +72,18 @@ async function runStep6Checks(config) {
     results.push({ attackId,
       expected: `로컬 가상 요청: ${expected}·${expectedReason}`,
       observed: `로컬 가상 요청 실행: ${response.decision}·${response.reasonCode}; 운영 기기 등록·미등록 공격 판정은 미확인` });
+  }
+  if (config.step >= 7) {
+    const { suspicious } = fixtureRequests();
+    const stepUpResponse = await decide(suspicious);
+    results.push({ attackId: 'composite_risk_step_up',
+      expected: '로컬 복합 이상 가상 요청: step_up·step_up_required',
+      observed: `로컬 가상 요청 실행: ${stepUpResponse.decision}·${stepUpResponse.reasonCode}; 실제 재로그인 미실행` });
+    const verifiedResponse = await decide({ ...suspicious,
+      stepUp: { verified: true, authAgeSeconds: 60 } });
+    results.push({ attackId: 'engine_verified_step_up',
+      expected: '엔진 검증 재로그인 시각이 유효한 가상 요청: allow·approved',
+      observed: `로컬 가상 요청 실행: ${verifiedResponse.decision}·${verifiedResponse.reasonCode}; 실제 엔진 로그인 시각 검증은 미확인` });
   }
   return results;
 }
