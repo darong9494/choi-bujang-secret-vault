@@ -63,6 +63,18 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 
 로컬 가상 사건 확인은 저장소 루트에서 `npm run detect:test`로 실행합니다. 정상 사건은 `observe`, 복합 의심 사건만 단일 `deviceId`와 `burst_read` 이유 코드가 포함된 `propose_revocation`이어야 합니다. 실제 반 엔진 전달이나 심판 판정은 이 시험으로 확인되지 않습니다.
 
+## 10단계: 백업에서 자료실을 되살립니다
+
+현재 기준선에서 `/api/notes`와 `/api/notes/:id`는 로그인 사용자 소유 메모만 처리합니다. 복구 경로와 앱 소유 백업 사본은 없었습니다. `POST /api/restore`는 로그인 ID와 메모 ID로 백업 및 현재 메모 소유권을 대조하고, 백업 본문의 SHA-256을 재계산해 저장된 지문과 맞을 때만 해당 메모의 제목·내용을 갱신합니다. 다른 메모와 별도 감사 기록은 수정하거나 삭제하지 않습니다.
+
+복구를 쓰기 전에 Supabase 대시보드의 **SQL Editor → New query**에서 `supabase_restore_backup_migration_sql.sql`을 실행합니다. 이 마이그레이션은 소유자가 있는 메모를 `note_backups`에 한 번 복사하고, 기존 백업 행은 덮어쓰지 않습니다. 서비스의 `notes` 테이블만 읽어 백업을 만들므로 이전 스냅샷이 이미 따로 있다면 그 사본을 먼저 `note_backups` 형식으로 준비해야 합니다. 실행 결과에 SQL 오류가 없어야 합니다.
+
+복구 요청 형식은 `POST /api/restore`, `Authorization: Bearer <로그인 토큰>`, `X-Resource-ID: memo:<메모 UUID>`, JSON `{ "id": "<메모 UUID>" }`입니다. 정상 결과는 소유자 본인의 일치하는 백업 한 건을 복구하고 `{ "restored": true }`를 반환합니다. 다른 소유자의 메모는 `404`, 로그인 누락은 `401`, 백업 해시 변조는 `409`로 거부합니다. B의 A 메모 읽기·복구는 거부되어야 하고, A의 정상 자료 요청은 계속 허용되어야 합니다.
+
+복구 뒤 1~9단계 재시험 순서: (1) 비로그인으로 `/`의 기존 자료실 확인, (2) 비로그인 `GET /data.json`에 메모 본문이 없는지 확인, (3) 비로그인 `GET /api/notes`가 `401`인지 확인, (4) A 로그인 후 자기 메모 목록·항목 읽기가 되는지 확인, (5) 브라우저 자료 요청에 서버 비밀값이 없는지 확인, (6) `npm run decider:test`에서 등록 기기는 허용·미등록 기기는 거부되는지 확인, (7) 같은 명령에서 복합 이상 접속이 추가 확인되고 검증된 재로그인은 허용되는지 확인, (8) A의 자기 메모 변경·삭제는 가능하고 B의 A 메모 요청은 거부되는지 확인, (9) `npm run detect:test`에서 정상 사건은 관찰하고 조회 폭주는 회수 제안만 내는지 확인합니다. 이어 A 정상 읽기 → B의 A 메모 읽기 거부 → A의 지정 메모 복구 → A 정상 읽기 재확인 → B의 읽기·복구 재시도 거부 순서로 회귀 확인합니다.
+
+자동 로컬 복구 확인은 `npm run test:restore`이며 가상 DB 요청 연습입니다. 배포에서 직접 보낸 비로그인 `GET /api/notes`와 `POST /api/restore` 결과는 `npm run bundle`이 자기 점검에 기록합니다. 위 1~5·8번 수동 요청과 A/B 로그인 회귀는 별도 실행 전까지 미실행입니다.
+
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.

@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if ([6, 7, 8, 9].includes(config.step)) return runStep6Checks(config);
+  if ([6, 7, 8, 9, 10].includes(config.step)) return runStep6Checks(config);
   if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
@@ -58,6 +58,25 @@ async function runStep6Checks(config) {
     } catch {
       results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
         observed: `실제 GET ${path} 요청을 보냈으나 응답 확인 실패; 미확인` });
+    }
+  }
+
+  if (config.step >= 10) {
+    try {
+      const response = await fetch(new URL('/api/restore', app), {
+        method: 'POST', redirect: 'error', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: '00000000-0000-4000-8000-000000000001' }),
+        signal: AbortSignal.timeout(5000),
+      });
+      results.push({ attackId: 'anonymous_note_restore',
+        expected: '비로그인 복구 요청: HTTP 401',
+        observed: `실제 POST /api/restore HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+      await response.body?.cancel();
+    } catch {
+      results.push({ attackId: 'anonymous_note_restore',
+        expected: '비로그인 복구 요청: HTTP 401',
+        observed: '실제 POST /api/restore 요청을 보냈으나 응답 확인 실패; 미확인' });
     }
   }
 
