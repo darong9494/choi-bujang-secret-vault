@@ -59,7 +59,7 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 
 ## 9단계: 도플갱어를 찾고 권한 회수를 제안합니다
 
-`src/detect.mjs`는 같은 가명 주체와 단일 기기의 조회 사건 중 출처가 `judge_fixture`로 표시된 비정상 네트워크 `GET`이 10분 안에 120건을 초과할 때만 `{ action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } }`를 반환합니다. 정상 네트워크의 다량 조회, 지역 차이만 있는 사건, 출처·기기 정보가 빠진 사건은 `observe`입니다. 이는 탐지 함수의 별도 결과이며 `decide()`의 허용·거부 형식은 바꾸지 않습니다. 실제 권한 회수와 탐지부터 회수까지의 시간 측정은 미실행입니다.
+`src/detect.mjs`는 같은 가명 주체와 단일 기기의 `judge_fixture` 조회가 10분 안에 120건을 초과하고, 같은 시간창에 비정상 네트워크 신호가 있을 때만 `{ action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } }`를 반환합니다. 정상 네트워크의 다량 조회, 지역 차이만 있는 사건, 출처·기기 정보가 빠진 사건은 `observe`입니다. 이는 탐지 함수의 별도 결과이며 `decide()`의 허용·거부 형식은 바꾸지 않습니다. 실제 권한 회수와 탐지부터 회수까지의 시간 측정은 미실행입니다.
 
 로컬 가상 사건 확인은 저장소 루트에서 `npm run detect:test`로 실행합니다. 정상 사건은 `observe`, 복합 의심 사건만 단일 `deviceId`와 `burst_read` 이유 코드가 포함된 `propose_revocation`이어야 합니다. 실제 반 엔진 전달이나 심판 판정은 이 시험으로 확인되지 않습니다.
 

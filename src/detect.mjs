@@ -6,7 +6,7 @@ const READ_LIMIT = 120;
 export function detect(events) {
   if (!Array.isArray(events)) throw new TypeError('invalid_detection_events');
 
-  const suspiciousReads = new Map();
+  const readsByIdentityAndDevice = new Map();
   for (const event of events) {
     const subject = event?.identity?.sub;
     const deviceId = event?.deviceId;
@@ -17,20 +17,25 @@ export function detect(events) {
     if (!hasFixtureSignals || event.method !== 'GET'
         || typeof subject !== 'string' || !subject.trim()
         || typeof deviceId !== 'string' || !/^[a-f0-9]{16}$/u.test(deviceId)
-        || event.signals.network !== 'unusual' || !Number.isFinite(at)) continue;
+        || !Number.isFinite(at)) continue;
 
     const key = `${subject}\u0000${deviceId}`;
-    const timestamps = suspiciousReads.get(key) ?? { deviceId, timestamps: [] };
-    timestamps.timestamps.push(at);
-    suspiciousReads.set(key, timestamps);
+    const reads = readsByIdentityAndDevice.get(key) ?? { deviceId, events: [] };
+    reads.events.push({ at, unusualNetwork: event.signals.network === 'unusual' });
+    readsByIdentityAndDevice.set(key, reads);
   }
 
-  for (const { deviceId, timestamps } of suspiciousReads.values()) {
-    timestamps.sort((a, b) => a - b);
+  for (const { deviceId, events: reads } of readsByIdentityAndDevice.values()) {
+    reads.sort((a, b) => a.at - b.at);
     let first = 0;
-    for (let last = 0; last < timestamps.length; last += 1) {
-      while (timestamps[last] - timestamps[first] > WINDOW_MS) first += 1;
-      if (last - first + 1 > READ_LIMIT) {
+    let unusualNetworkCount = 0;
+    for (let last = 0; last < reads.length; last += 1) {
+      if (reads[last].unusualNetwork) unusualNetworkCount += 1;
+      while (reads[last].at - reads[first].at > WINDOW_MS) {
+        if (reads[first].unusualNetwork) unusualNetworkCount -= 1;
+        first += 1;
+      }
+      if (last - first + 1 > READ_LIMIT && unusualNetworkCount > 0) {
         return {
           action: 'propose_revocation',
           reasonCode: 'burst_read',

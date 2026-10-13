@@ -22,6 +22,11 @@ const cases = [
   { name: '평소 네트워크 다량 조회 121건', events: reads(121), expected: { action: 'observe' } },
   { name: '비정상 네트워크 다량 조회 121건', events: reads(121, { network: 'unusual' }),
     expected: { action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } } },
+  { name: '다량 조회 중 일부만 비정상 네트워크', events: (() => {
+    const events = reads(121);
+    events[0].signals.network = 'unusual';
+    return events;
+  })(), expected: { action: 'propose_revocation', reasonCode: 'burst_read', target: { deviceId } } },
   { name: '지역만 다른 다량 조회', events: reads(121, { region: 'unusual' }),
     expected: { action: 'observe' } },
   { name: '출처 불명 신호의 다량 조회', events: reads(121,
