@@ -47,6 +47,8 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`과 서버 
 
 로컬 가상 연습은 `npm run decider:test`입니다. 정상 조합은 `allow`, 복합 이상 조합은 `step_up · step_up_required`, 엔진 검증 재로그인 시각이 있는 가상 요청은 `allow`여야 합니다. 브라우저 위치는 사용하지 않으며, 실제 재로그인 검증은 제공 엔진이 확인한 시각이 전달될 때만 시험할 수 있습니다. 이 연습은 운영 엔진 접속이나 심판 판정이 아닙니다.
 
+현재 제공 계약은 `stepUp.verified`와 `authAgeSeconds` 필드만 정의하며, 같은 로그인 사용자의 새 로그인 확인을 자료 API까지 강제하는 연결은 확인되지 않았습니다. `/api/notes`와 `/api/notes/:id`는 `decide()`를 호출하지 않으므로 추가 확인 전 자료 차단 및 새 로그인 뒤 허용은 미실행입니다. 실제 엔진 연동 전에는 로컬 가상 사건만 확인합니다.
+
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
