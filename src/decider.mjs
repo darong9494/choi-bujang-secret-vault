@@ -1,4 +1,8 @@
-export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required']);
+export const RULE_IDS = Object.freeze([
+  'device_registered', 'resource_scope_access', 'step_up_required',
+]);
+
+const NOTE_ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
 function hasVerifiedIdentityAndDevice(request) {
   return request?.schema === 'aleph.decision.v1'
@@ -8,14 +12,18 @@ function hasVerifiedIdentityAndDevice(request) {
     && typeof request.deviceId === 'string' && /^[a-f0-9]{16}$/u.test(request.deviceId);
 }
 
-function isNotesRead(request) {
-  if (request?.service !== 'notes' || request.method !== 'GET') return false;
-  return [
-    ['GET /notes', /^\/notes$/u],
-    ['GET /notes/:id', /^\/notes\/[^/]+$/u],
-    ['GET /api/notes', /^\/api\/notes$/u],
-    ['GET /api/notes/:id', /^\/api\/notes\/[^/]+$/u],
-  ].some(([route, pathPattern]) => request.route === route && pathPattern.test(request.path));
+function isAuthorizedNoteAction(request) {
+  if (request?.service !== 'notes') return false;
+  const collectionPaths = ['/api/notes', '/notes'];
+  for (const basePath of collectionPaths) {
+    if (['GET', 'POST'].includes(request.method)
+        && request.route === `${request.method} ${basePath}`
+        && request.path === basePath) return true;
+    if (['GET', 'PUT', 'DELETE'].includes(request.method)
+        && request.route === `${request.method} ${basePath}/:id`
+        && new RegExp(`^${basePath}/${NOTE_ID}$`, 'iu').test(request.path)) return true;
+  }
+  return false;
 }
 
 function hasValidRiskInput(request) {
@@ -63,13 +71,13 @@ export async function decide(request) {
     };
   }
 
-  if (!isNotesRead(request)) {
+  if (!isAuthorizedNoteAction(request)) {
     return {
       schema: 'aleph.decision.v1',
       requestId: request.requestId,
       decision: 'deny',
       reasonCode: 'starter_not_ready',
-      ruleIds: ['device_registered'],
+      ruleIds: ['device_registered', 'resource_scope_access'],
     };
   }
 
@@ -79,7 +87,7 @@ export async function decide(request) {
       requestId: request.requestId,
       decision: 'deny',
       reasonCode: 'starter_not_ready',
-      ruleIds: ['device_registered', 'step_up_required'],
+      ruleIds: ['device_registered', 'resource_scope_access', 'step_up_required'],
     };
   }
 
@@ -89,7 +97,7 @@ export async function decide(request) {
       requestId: request.requestId,
       decision: 'step_up',
       reasonCode: 'step_up_required',
-      ruleIds: ['device_registered', 'step_up_required'],
+      ruleIds: ['device_registered', 'resource_scope_access', 'step_up_required'],
     };
   }
 
@@ -98,6 +106,6 @@ export async function decide(request) {
     requestId: request.requestId,
     decision: 'allow',
     reasonCode: 'approved',
-    ruleIds: ['device_registered'],
+    ruleIds: ['device_registered', 'resource_scope_access'],
   };
 }
