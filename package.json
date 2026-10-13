@@ -5,15 +5,10 @@
   "scripts": {
     "build": "node scripts/build-public.mjs",
     "test:r5": "node --test test/r5.test.mjs",
-    "test:restore": "node --test test/restore-api.test.mjs",
-    "test:policy-restore": "node --test test/policy-restore.test.mjs",
     "test:package": "node --test test/package-starter.test.mjs",
     "bundle": "node scripts/bundle.mjs",
     "decider:test": "node scripts/decider-test.mjs",
     "detect:test": "node scripts/detect-test.mjs",
-    "policy:diff": "node scripts/policy-restore.mjs diff",
-    "policy:restore": "node scripts/policy-restore.mjs restore",
-    "policy:snapshot": "node scripts/policy-restore.mjs snapshot",
     "fixture:7": "node scripts/fixture-7.mjs",
     "xdr:run": "node scripts/xdr-run.mjs"
   },
