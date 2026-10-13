@@ -6,13 +6,13 @@ async function probe(base, path, attackId, headers = {}) {
   try {
     const response = await fetch(new URL(path, base), {
       headers: { Accept: 'application/json', ...headers },
-      redirect: 'manual', signal: AbortSignal.timeout(5000),
+      redirect: 'manual',
       alephEvidence: { caseId: attackId, requestKey: 'read' },
     });
     const body = await response.text();
     let ready;
     try { ready = JSON.parse(body)?.ready; } catch { ready = undefined; }
-    const rawId = response.headers.get('x-vercel-id');
+    const rawId = response.headers?.get?.('x-vercel-id');
     const requestId = typeof rawId === 'string' && /^[a-zA-Z0-9:._-]{1,100}$/u.test(rawId)
       ? rawId : null;
     return { ran: true, status: response.status, bodyBytes: Buffer.byteLength(body),
