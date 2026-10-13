@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if ([6, 7, 8, 9, 10, 11].includes(config.step)) return runStep6Checks(config);
+  if ([6, 7, 8, 9, 10, 11, 12].includes(config.step)) return runStep6Checks(config);
   if (config.step !== 1) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
@@ -31,6 +31,11 @@ export async function runAttackChecks(config) {
     observed: visible ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임' : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
 }
 
+function requestEvidence(response) {
+  const id = response.headers.get('x-vercel-id');
+  return `; x-vercel-id=${typeof id === 'string' && /^[a-zA-Z0-9:._-]{1,100}$/u.test(id) ? id : '미제공'}`;
+}
+
 async function runStep6Checks(config) {
   let app;
   try {
@@ -53,7 +58,7 @@ async function runStep6Checks(config) {
         redirect: 'error', signal: AbortSignal.timeout(5000), cache: 'no-store',
       });
       results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
-        observed: `실제 GET ${path} HTTP ${response.status}; ${response.status === expectedStatus ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `실제 GET ${path} HTTP ${response.status}; ${response.status === expectedStatus ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
@@ -69,7 +74,7 @@ async function runStep6Checks(config) {
       });
       results.push({ attackId: 'anonymous_note_restore',
         expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
-        observed: `실제 GET /api/restore/:noteId HTTP ${response.status}; ${[401, 403, 404].includes(response.status) ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `실제 GET /api/restore/:noteId HTTP ${response.status}; ${[401, 403, 404].includes(response.status) ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId: 'anonymous_note_restore',
@@ -85,12 +90,31 @@ async function runStep6Checks(config) {
       });
       results.push({ attackId: 'anonymous_device_approval',
         expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
-        observed: `실제 GET /api/device/status HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `실제 GET /api/device/status HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId: 'anonymous_device_approval',
         expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
         observed: '실제 GET /api/device/status 요청을 보냈으나 응답 확인 실패; 미확인' });
+    }
+  }
+
+  if (config.step >= 12) {
+    for (const [attackId, path, headers, description] of [
+      ['forged_login_token', '/api/notes', { Authorization: 'Bearer a.b.c' }, '위조 로그인 토큰'],
+      ['query_identity_spoof', '/api/notes?user_id=00000000-0000-4000-8000-000000000001', {}, '쿼리 신원 위조'],
+    ]) {
+      try {
+        const response = await fetch(new URL(path, app), {
+          headers, redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(5000),
+        });
+        results.push({ attackId, expected: `${description}: HTTP 401`,
+          observed: `실제 GET /api/notes HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}${requestEvidence(response)}; 응답 본문 미기록` });
+        await response.body?.cancel();
+      } catch {
+        results.push({ attackId, expected: `${description}: HTTP 401`,
+          observed: '실제 GET /api/notes 요청을 보냈으나 응답 확인 실패; 미확인' });
+      }
     }
   }
 
