@@ -44,15 +44,15 @@ export default async function handler(req, res) {
     }
     const { checks, totals } = summarize(record.attackAttempts);
     const deploymentCommit = process.env.VERCEL_GIT_COMMIT_SHA;
+    const currentCommit = typeof deploymentCommit === 'string' && /^[a-f0-9]{40}$/u.test(deploymentCommit)
+      ? deploymentCommit : null;
     return res.status(200).json({
       schema: 'aleph.ops.snapshot.v1', checkedAt: record.checkedAt,
-      commit: record.commit,
-      deploymentCommit: typeof deploymentCommit === 'string' && /^[a-f0-9]{40}$/u.test(deploymentCommit)
-        ? deploymentCommit : null,
+      commit: currentCommit, recordedCommit: record.commit,
       totals, checks, policyRules: [...RULE_IDS],
       detection: '학생 코드의 가상 사건 연습; 실제 권한 회수는 미실행',
       restore: '9단계 통과 커밋은 복구 기준 후보; 엔진 복원은 미실행',
-      note: '저장된 학생 자기 점검 기록입니다. 운영 심판의 41종 시험 결과는 연결되지 않았으며 이 수치에 포함하지 않습니다.',
+      note: '저장된 학생 자기 점검 기록입니다. 점검 대상 커밋은 별도로 표시합니다. 운영 심판의 41종 시험 결과는 이 수치에 포함하지 않습니다.',
     });
   } catch {
     return res.status(503).json({ error: 'checks_unavailable' });

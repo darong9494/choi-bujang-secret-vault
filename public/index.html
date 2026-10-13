@@ -361,7 +361,7 @@
         document.querySelector('#ops-policy').textContent = `판정기 규칙: ${snapshot.policyRules.join(', ')}`;
         document.querySelector('#ops-detection').textContent = `탐지·회수: ${snapshot.detection}`;
         document.querySelector('#ops-restore').textContent = `복구: ${snapshot.restore}`;
-        opsState.textContent = `점검 시각 ${snapshot.checkedAt} · 점검 대상 커밋 ${snapshot.commit?.slice(0, 12) ?? '미제공'} · 현재 배포 커밋 ${snapshot.deploymentCommit?.slice(0, 12) ?? '미제공'} · ${snapshot.note}`;
+        opsState.textContent = `점검 시각 ${snapshot.checkedAt} · 점검 대상 커밋 ${snapshot.recordedCommit?.slice(0, 12) ?? '미제공'} · 현재 배포 커밋 ${snapshot.commit?.slice(0, 12) ?? '미제공'} · ${snapshot.note}`;
       } catch (error) {
         checkRecords.replaceChildren();
         opsState.textContent = error.message;

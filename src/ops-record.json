@@ -1,90 +1,90 @@
 {
   "schema": "aleph.student-check-record.v1",
-  "checkedAt": "2026-10-13T08:01:38.140Z",
-  "commit": "8bbf32b36f295b12e360c013938417d81fee1dc5",
+  "checkedAt": "2026-10-13T08:27:32.703Z",
+  "commit": "4585996b3cfefd567872271df66b1e3128d26672",
   "attackAttempts": [
     {
       "attackId": "existing_vault_screen",
       "stage": 1,
       "expected": "자료실 공개 화면 HTTP 200",
-      "observed": "HTTP 200; bodyBytes=20655; requestId=icn1::lkwtz-1791878483360-000a550d48f7",
+      "observed": "HTTP 200; bodyBytes=20655; requestId=icn1::vfp4j-1791880035428-46f0930e9ac9",
       "result": "blocked"
     },
     {
       "attackId": "anonymous_notes_read",
       "stage": 3,
       "expected": "비로그인 메모 HTTP 401",
-      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::fz4mf-1791878483392-4da42d59bd40",
+      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::vfp4j-1791880035906-f88a787608e7",
       "result": "blocked"
     },
     {
       "attackId": "anonymous_note_restore",
       "stage": 10,
       "expected": "비로그인 복원 경로 거부",
-      "observed": "HTTP 404; bodyBytes=68; requestId=icn1::kx6gx-1791878483634-778e3934d551",
+      "observed": "HTTP 404; bodyBytes=68; requestId=icn1::kpcpg-1791880036736-c8d06451cc8c",
       "result": "blocked"
     },
     {
       "attackId": "anonymous_device_approval",
       "stage": 11,
       "expected": "비로그인 기기 승인 거부",
-      "observed": "HTTP 401; bodyBytes=53; requestId=icn1::iad1::4b8fw-1791878483667-2b14092a9b0a",
+      "observed": "HTTP 401; bodyBytes=53; requestId=icn1::iad1::j9gx4-1791880036986-7ef15dbaec1a",
       "result": "blocked"
     },
     {
       "attackId": "forged_login_token",
       "stage": 3,
       "expected": "위조 토큰 거부",
-      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::288dj-1791878483901-45d9116d9687",
+      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::h9kcw-1791880037771-f71c71a4f18b",
       "result": "blocked"
     },
     {
       "attackId": "query_identity_spoof",
       "stage": 4,
       "expected": "쿼리 신원 위조 거부",
-      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::lkwtz-1791878484116-54a9c78dea58",
+      "observed": "HTTP 401; bodyBytes=36; requestId=icn1::iad1::65sf9-1791880037987-aa488459f236",
       "result": "blocked"
     },
     {
       "attackId": "registered_device_read",
       "stage": 6,
       "expected": "등록 기기 가상 요청 허용",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::g6gxt-1791878484350-baeb3538f06a",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::kpcpg-1791880038205-ea35a27afcc2",
       "result": "blocked"
     },
     {
       "attackId": "unregistered_device_read",
       "stage": 6,
       "expected": "미등록 기기 가상 요청 거부",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::slqc9-1791878484601-edd4ae82c496",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::cswmv-1791880038873-28b5a0744846",
       "result": "blocked"
     },
     {
       "attackId": "composite_risk_step_up",
       "stage": 7,
       "expected": "복합 이상 가상 요청 재확인",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::g6gxt-1791878484835-fe28d3604733",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::kpcpg-1791880039356-bd367425a17a",
       "result": "blocked"
     },
     {
       "attackId": "engine_verified_step_up",
       "stage": 7,
       "expected": "재확인된 가상 요청 허용",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::xpg22-1791878485051-e14a3e4b5533",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::4c8kb-1791880039573-bfe40778346c",
       "result": "blocked"
     },
     {
       "attackId": "normal_read_detection",
       "stage": 9,
       "expected": "정상 조회 가상 사건 관찰",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::wb2vz-1791878485263-613913355de8",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::gngqz-1791880039805-47f91ae5a589",
       "result": "blocked"
     },
     {
       "attackId": "unusual_network_burst_revocation_proposal",
       "stage": 9,
       "expected": "조회 폭주 가상 사건 회수 제안",
-      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::fz4mf-1791878485488-d61ecaa304b0",
+      "observed": "HTTP 200; bodyBytes=41; jsonReady=true; requestId=icn1::iad1::s8567-1791880040040-715cb188b6d7",
       "result": "blocked"
     },
     {
