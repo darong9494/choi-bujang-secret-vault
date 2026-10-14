@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import handler from '../api/checks.js';
+import opsHandler from '../api/ops.js';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { decide, RULE_IDS } from '../src/decider.mjs';
@@ -18,9 +19,9 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
       : path.startsWith('/api/restore/') ? 404 : 401;
     return new Response(path === '/api/checks' ? '{"ready":true}' : '{}', { status });
   };
-  async function snapshot() {
+  async function snapshot(api = handler) {
     let body;
-    await handler({ method: 'GET', query: {} }, {
+    await api({ method: 'GET', query: {} }, {
       setHeader() {},
       status(value) { assert.equal(value, 200); return this; },
       json(value) { body = value; },
@@ -48,6 +49,18 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
     }
     assert.equal(calls.length, 24);
     assert.equal(second.checks.filter(check => check.observed === 'network_error').length, 12);
+    unavailable = false;
+    const ops = await snapshot(opsHandler);
+    assert.equal(ops.schema, 'aleph.ops.v1');
+    assert.deepEqual(ops.summary, first.totals);
+    assert.equal(ops.items.length, ops.summary.total);
+    assert.equal(ops.items.filter(item => item.kind === 'not_run').length, 5);
+    assert.deepEqual(ops.rules.ids, RULE_IDS);
+    assert.equal(ops.recovery.available, false);
+    for (const item of ops.items) {
+      if (item.kind === 'not_run') assert.equal(item.observed, 'not_run');
+      else assert.match(item.observed, /^HTTP \d{3};/u);
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -82,9 +95,8 @@ test('화면 수치는 API 합계와 같고 API 오류 뒤에 이전 수치를 �
     opsRefresh: {}, opsState: element('state'), checkRecords: element('records'),
     document: { querySelector: element, getElementById: id => element(`#${id}`), createElement: () => element(Symbol()) },
     fetch: async () => ({ ok: !fail, json: async () => ({
-      schema: 'aleph.ops.snapshot.v1', totals: { total: 3, blocked: 1, failed: 1, notRun: 1 },
-      total: mismatched ? 99 : 3, blocked: 1, failed: 1, notRun: 1,
-      checks: ['blocked', 'breached', 'not_run'].map(result => ({ result })), policyRules: [],
+      schema: 'aleph.ops.v1', summary: { total: mismatched ? 99 : 3, blocked: 1, failed: 1, notRun: 1 },
+      items: ['blocked', 'breached', 'not_run'].map(result => ({ result })), rules: { ids: [] }, recovery: {},
     }) }),
   };
   await runInNewContext(`${source}\nloadOps()`, context);

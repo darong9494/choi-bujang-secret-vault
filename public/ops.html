@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>탈환 작전실 · 서버 점검 기록</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101a28; color: #ecf4ff; }
+    main { max-width: 1100px; margin: auto; padding: 32px 20px; }
+    p { line-height: 1.7; }
+    a { color: #8ad8df; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 10px 24px; }
+    dd { margin: 0; }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid #51667c; padding: 12px; text-align: left; overflow-wrap: anywhere; }
+    button { padding: 10px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/">자료실로 돌아가기</a>
+    <h1>탈환 작전실</h1>
+    <p>수치와 표는 <a href="/api/ops">/api/ops</a>의 같은 서버 기록에서 읽습니다. 기대 응답에는 정상 요청의 허용도 포함합니다. 가상 연습은 실제 기기 승인·접속 회수의 증거가 아니며, 보내지 않은 요청과 응답 미확인은 미실행으로 남깁니다.</p>
+    <button id="reload" type="button">지금 다시 확인</button>
+    <p id="status" aria-live="polite">서버 기록을 읽는 중입니다.</p>
+    <dl id="ops-stats">
+      <dt>점검 항목</dt><dd data-k="total">-</dd>
+      <dt>막은 공격</dt><dd data-k="blocked">-</dd>
+      <dt>뚫린 공격</dt><dd data-k="failed">-</dd>
+      <dt>실행하지 않은 점검</dt><dd data-k="notRun">-</dd>
+    </dl>
+    <p id="ops-meta"></p>
+    <p id="rules-text"></p>
+    <p id="recovery-text"></p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>단계</th><th>사례</th><th>출처</th><th>기대</th><th>실제 응답</th><th>요청 ID</th><th>결과</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p>학생 작업: 화면·자료 API·판정 및 탐지 규칙·자기 점검. 제공 ALEPH SDP 엔진: 신원·기기 확인, 집행·회수·복원·감사. 외부 서비스: Vercel·Supabase. 아래 기록은 학생 자기 점검이며 운영 심판 판정이 아닙니다.</p>
+  </main>
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const resultLabels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행 또는 응답 미확인' };
+    function clear() {
+      for (const dd of document.querySelectorAll('#ops-stats dd')) dd.textContent = '-';
+      $('rows').replaceChildren();
+      for (const id of ['ops-meta', 'rules-text', 'recovery-text']) $(id).textContent = '';
+    }
+    async function load() {
+      $('reload').disabled = true;
+      clear();
+      $('status').textContent = '서버 기록을 읽는 중입니다.';
+      try {
+        const response = await fetch('/api/ops', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || data?.schema !== 'aleph.ops.v1' || !Array.isArray(data.items)) {
+          throw new Error('서버 점검 기록을 읽지 못했습니다.');
+        }
+        const counts = { total: data.items.length, blocked: 0, failed: 0, notRun: 0 };
+        const keys = { blocked: 'blocked', breached: 'failed', not_run: 'notRun' };
+        for (const item of data.items) {
+          if (!Object.hasOwn(keys, item.result)) throw new Error('점검 결과 형식이 맞지 않습니다.');
+          if (item.result !== 'not_run' && !/^HTTP \d{3}(?:;|$)/u.test(item.observed)) {
+            throw new Error('실제 응답 기록이 없습니다.');
+          }
+          if (item.result === 'not_run' && !['not_run', 'network_error'].includes(item.observed)) {
+            throw new Error('미실행 기록 형식이 맞지 않습니다.');
+          }
+          counts[keys[item.result]]++;
+        }
+        if (Object.keys(counts).some(key => counts[key] !== data.summary?.[key])) {
+          throw new Error('화면 수치와 서버 기록이 일치하지 않습니다.');
+        }
+        const rows = data.items.map(item => {
+          const tr = document.createElement('tr');
+          for (const value of [item.stage, item.attackId, item.source, item.expected, item.observed,
+            item.requestId ?? '미제공', resultLabels[item.result]]) {
+            const td = document.createElement('td');
+            td.textContent = String(value);
+            tr.append(td);
+          }
+          return tr;
+        });
+        $('rows').replaceChildren(...rows);
+        $('rules-text').textContent = `규칙 ${data.rules.count}개: ${data.rules.ids.join(', ')}`;
+        $('recovery-text').textContent = `복구: ${data.recovery.reason}`;
+        $('ops-meta').textContent = `수집 완료 시각 ${data.checkedAt} · 배포 커밋 ${data.commit ?? '미제공'}`;
+        for (const dd of document.querySelectorAll('#ops-stats dd')) dd.textContent = String(data.summary[dd.dataset.k]);
+        $('status').textContent = '서버 점검 기록을 읽었습니다.';
+      } catch (error) {
+        clear();
+        $('status').textContent = error.message;
+      } finally {
+        $('reload').disabled = false;
+      }
+    }
+    $('reload').addEventListener('click', load);
+    void load();
+  </script>
+</body>
+</html>

@@ -36,10 +36,10 @@
 | 가상 규칙·탐지 | 등록·미등록 기기, 복합 이상·재확인, 정상 조회·조회 폭주 | 학생 코드가 만든 고정 가상 입력 |
 | 미실행 | 등록된 실기기 자료 읽기, 타인 메모, 엔진 권한 회수·복원·감사 | 제공 엔진 기록 미연결 |
 
-`api/checks.js`와 `npm run bundle`은 같은 `runAttackChecks(config)`로 점검합니다. 작전실은 과거의 `src/ops-record.json` 대신 이번 조회에서 받은 HTTP 응답으로 행과 합계를 함께 만듭니다. 각 요청은 5초 안에 응답을 확인하며, 응답 미확인과 엔진 미연결 항목은 미실행으로 남깁니다. 화면 조회에 실패하면 이전 수치도 지웁니다. `blocked`는 학생 자기 점검의 기대 응답이라는 뜻이며 운영 심판의 통과 판정이 아닙니다. Vercel이 제공한 요청 ID가 있으면 행에 표시합니다. 메모 본문, 토큰, 기기 키는 점검 기록에 넣지 않습니다.
+`/api/ops`, `/api/checks`와 `npm run bundle`은 같은 `runAttackChecks(config)`로 점검합니다. 자료실과 `/ops.html`은 `/api/ops`의 `aleph.ops.v1` 서버 기록에서 `summary`와 `items`를 읽습니다. 두 API의 집계는 `src/ops-snapshot.mjs`에서 함께 만듭니다. 과거의 `src/ops-record.json`은 현재 집계에 쓰지 않습니다. 각 요청은 5초 안에 응답을 확인하며, 응답 미확인과 엔진 미연결 항목은 미실행으로 남깁니다. 화면 조회에 실패하면 이전 수치도 지웁니다. `blocked`는 학생 자기 점검의 기대 응답이라는 뜻이며 운영 심판의 통과 판정이 아닙니다. Vercel이 제공한 요청 ID가 있으면 행에 표시합니다. 메모 본문, 토큰, 기기 키는 점검 기록에 넣지 않습니다.
 
 가산점 조건은 Node.js 22 이상에서 새 설치가 성공하고, 판정기가 계약의 요청 이름·응답 다섯 항목과 `RULE_IDS`를 지키고, 설정의 `step`이 12인 것입니다. `npm run decider:test`는 가상 요청 연습입니다. 100점 여부는 기본 조건까지 포함한 재제출 판정에서 확인하세요. 회귀 검증은 `node --test test/checks.test.mjs`로 실행합니다.
 
-제작자의 [통과 표본 API](https://github.com/ChoiTimo/byteback-sample-pass/blob/main/api/checks.js)에 맞춰 `/api/checks` 최상위에 `total`, `blocked`, `failed`, `notRun`을 반환합니다. 상세 행과 기존 `totals`도 같은 요청 결과에서 집계합니다. 화면은 `#ops-stats`의 `data-k`로 네 항목을 표시하며, 최상위 합계·상세 행·`totals` 중 하나라도 다르면 수치를 비웁니다. 심판 내부 구현은 확인하지 못했으므로 이 형식 수정의 실제 효과는 재제출로 확인해야 합니다.
+`/api/checks` 최상위의 `total`, `blocked`, `failed`, `notRun`은 기존 요약용으로 유지합니다. [참고 사례의 서버 기록](https://github.com/alska14/choi-bujang-secret-vault/blob/main/src/ops-api.mjs)과 같이 `/api/ops`에는 `schema`, `checkedAt`, `commit`, `rules`, `recovery`, `summary`, `items`를 제공합니다. 복원 기록이 없으면 `recovery.available: false`로 응답합니다. 화면은 상세 행과 `summary`가 다르면 수치를 비웁니다. 수집 완료 시각은 개별 요청 시각과 구분합니다. 심판 내부 구현은 확인하지 못했으므로 실제 통과 여부는 재제출로 확인해야 합니다.
 
 이전 단계의 상세 설명은 [docs/STEP_RECORDS.md](docs/STEP_RECORDS.md)에 보존했습니다. 요청·응답 형식은 [docs/DECIDER_REQUEST.md](docs/DECIDER_REQUEST.md), 탐지 가상 사건 형식은 [docs/DETECT_EVENTS.md](docs/DETECT_EVENTS.md)를 따릅니다.
