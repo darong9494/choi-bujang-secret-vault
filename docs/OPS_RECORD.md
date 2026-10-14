@@ -1,22 +1,24 @@
-# 작전실 서버 기록 계약
+# 작전실 운영 기록 계약
 
-`GET /api/ops`와 `GET /api/checks`는 동일한 `aleph.ops.v1` 응답 형식을 사용합니다. `GET /api/checks?case=<고정 사례>`는 학생 코드의 가상 연습만 실행합니다. 임의 신원·사건·코드는 받지 않습니다.
+`GET /api/ops`는 `aleph.ops.v1` 형식으로 운영 기록 연결 상태를 반환합니다. 학생 자기 점검이나 고정 가상 입력을 운영 결과로 승격하지 않습니다. 현재 운영 판정·탐지·회수·복구 기록을 읽는 연결이 없으므로 `source: not_connected`, `status: not_run`입니다.
 
-| 항목 | 의미 |
+| 항목 | 운영 미연결 때의 값 |
 |---|---|
-| `checkedAt`, `commit` | 이번 수집 완료 시각과 배포 환경이 제공한 커밋. 커밋이 없으면 `null` |
-| `summary` | `total`, `blocked`, `failed`, `notRun`. 같은 응답의 `items`만 집계 |
-| 최상위 네 수치 | 요약 소비자를 위해 `summary`와 동일한 값 제공 |
-| `items` | 공개 가능한 사례·기대·실제 응답·출처·요청 ID·확인 시각·결과 |
-| `rules` | 현재 `RULE_IDS`의 개수와 이름 |
-| `detection` | 가상 탐지 사례 ID와 운영 사건 전달의 미실행 상태 |
-| `revocation` | 실제 회수 결과가 연결되지 않아 `not_run` |
-| `recovery` | 검증 사본이 연결되지 않아 `available: false`, `verifiedVersion: null`. 배포 버전은 복구 버전으로 승격하지 않음 |
+| `queriedAt` | 이번 상태 조회 시각 |
+| `checkedAt` | 운영 기록 시각이 없으므로 `null` |
+| `commit` | 배포 커밋. 운영 결과나 검증된 복구 버전을 뜻하지 않음 |
+| `summary` | `total`, `blocked`, `failed`, `notRun`이 모두 `null` |
+| 최상위 네 집계값 | `summary`와 동일한 `null` |
+| `items` | 확인된 운영 기록이 없어 빈 배열 |
+| `rules` | 실제 `RULE_IDS`의 개수·이름. 운영 성공 횟수가 아님 |
+| `decision`, `detection`, `revocation`, `recovery` | 모두 `not_run`. 검증된 복구 버전은 `null` |
 
-`items.kind`는 배포 API의 `live_api`, 고정 가상 연습 API의 `fixture_api`, 보내지 않은 `not_run`을 구분합니다. 요청을 보냈으나 응답을 확인하지 못하면 원래 요청 종류를 유지하고 `observed: network_error`, `result: not_run`으로 기록합니다. 보내지 않은 항목은 시각·HTTP 상태·요청 ID가 `null`이고 `observed: not_run`입니다.
+화면은 같은 응답의 `source`, `status`, `summary`, `items`를 검증합니다. 미연결이면 집계 칸에 미실행을 표시하고 숫자 0도 채우지 않습니다. 연결된 빈 기록의 0건과 아직 조회하지 못한 결과를 구분합니다. 숫자·행 불일치 또는 API 조회 실패 때는 이전 수치와 행을 비웁니다.
 
-`blocked`는 학생 자기 점검의 기대 응답이며 정상 요청의 허용도 포함합니다. 운영 심판의 통과나 41종 공격 방어 결과가 아닙니다. `failed`는 `result: breached`의 개수이고, 미실행·응답 미확인은 기대 응답에 포함하지 않습니다.
+`src/operations.mjs`의 `operationsSnapshot(record)`는 서버 전용 어댑터 경계입니다. 현재 API는 `null`만 전달하며 브라우저·요청 본문·쿼리·가상 파일에서 운영 결과를 받지 않습니다. 실제 엔진 계약과 읽기 연결을 확인한 뒤에만 서버 전용 기록을 전달해야 합니다. 연결을 구현하거나 완료했다고 주장하지 않습니다.
 
-화면은 API 응답을 한 번 받아 상세 행으로 합계를 검증한 뒤 그 응답의 `summary`를 표시합니다. 합계·기록 형식이 다르거나 API가 실패하면 숫자와 상세 기록을 비웁니다. 합계나 사례 수를 화면 상수로 채우지 않습니다. API와 제출은 `src/ops-record.mjs`의 같은 수집기를 쓰지만 별도 실행 시 네트워크 상태가 다르면 결과도 달라질 수 있습니다. 각각의 시각과 출처를 대조해야 합니다.
+서버 전용 기록을 전달할 때는 `source: operations`, 실제 ISO `checkedAt`, `summary`, `items`가 필요합니다. 각 행은 허용된 `attackId`, `category`(decision/detection/revocation/recovery), `stage`, `result`, 실제 `httpStatus`·`checkedAt`을 사용합니다. 미실행 행은 HTTP 상태·확인 시각이 없습니다. 서버는 행을 다시 세어 입력 합계와 대조하고 필요한 항목만 반환합니다. 본문·계정·기기 ID·토큰·임의 설명은 반환하지 않습니다. 이 어댑터 형식은 운영 엔진의 현재 외부 계약이라고 주장하지 않습니다.
 
-12단계의 `runAttackChecks`는 `attackId, stage, expected, observed, result` 다섯 필드만 내보내고, 1~11단계의 기존 세 필드 계약은 유지합니다. 비교용 `observed`에는 HTTP 상태·본문 바이트 수·가상 API의 `jsonReady`만 넣습니다. 요청 ID는 작전실 기록의 별도 항목입니다. 메모 본문·토큰·기기 키는 응답이나 로그에 넣지 않습니다.
+학생 자기 점검은 별도입니다. `/api/checks`는 `aleph.student-checks.v1`, `source: student_self_check`로 자기 점검 결과를 반환합니다. `?case=<고정 사례>`는 `student_fixture` 가상 연습만 실행합니다. `src/ops-record.mjs`는 이 자기 점검과 제출용 수집기로 유지합니다. 이 결과는 작전실 운영 집계에 넣지 않습니다.
+
+12단계의 `runAttackChecks`는 기존처럼 `attackId, stage, expected, observed, result`만 내보내며, 1~11단계의 세 필드 계약도 유지합니다. `npm run bundle`의 성공은 심판 통과나 41종 공격 방어 완료를 뜻하지 않습니다.

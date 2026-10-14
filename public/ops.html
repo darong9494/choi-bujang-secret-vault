@@ -17,14 +17,14 @@
     <h1>탈환 작전실</h1>
     <section data-ops>
       <h2>서버 점검 기록</h2>
-      <p>수치와 표는 <a href="/api/ops">같은 서버 응답</a>에서 읽습니다. 막은 공격은 자기 점검의 기대 응답 수이며 정상 요청 허용도 포함합니다. 가상 연습·실제 API·미실행을 구분하고 메모 본문은 표시하지 않습니다.</p>
+      <p>수치와 표는 <a href="/api/ops">같은 서버 응답</a>의 운영 기록과 대조합니다. 현재 운영 결과 조회는 미연결이며 수치를 채우지 않고 미실행으로 표시합니다. 구현된 규칙 수는 운영 성공 횟수와 구분합니다. <a href="/api/checks">학생 자기 점검 API</a>는 별도 연습 결과입니다.</p>
       <button type="button" data-refresh>지금 다시 확인</button>
       <p data-state aria-live="polite">서버 기록 대기 중입니다.</p>
       <dl id="ops-stats" class="ops-counts">
-        <dt>점검 항목</dt><dd data-k="total">-</dd>
-        <dt>막은 공격</dt><dd data-k="blocked">-</dd>
-        <dt>뚫린 공격</dt><dd data-k="failed">-</dd>
-        <dt>실행하지 않은 점검</dt><dd data-k="notRun">-</dd>
+        <dt>점검 항목</dt><dd data-k="total">미실행</dd>
+        <dt>막은 공격</dt><dd data-k="blocked">미실행</dd>
+        <dt>뚫린 공격</dt><dd data-k="failed">미실행</dd>
+        <dt>실행하지 않은 점검</dt><dd data-k="notRun">미실행</dd>
       </dl>
       <p data-value="meta"></p>
       <h3>판정기 규칙</h3><p data-value="rules"></p>

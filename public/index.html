@@ -77,14 +77,14 @@
     <section data-ops>
       <h2>탈환 작전실</h2>
       <p><a href="/ops.html">작전실 상세 화면</a> · <a href="/api/ops">서버 기록</a></p>
-      <p>기대 응답에는 정상 요청의 허용도 포함합니다. 실제 API·학생 가상 연습·미실행을 구분합니다. 운영 심판의 41종 공격 결과는 이 집계에 포함하지 않습니다.</p>
+      <p>운영 판정·탐지·회수·복구 기록의 연결 상태를 표시합니다. 연결되지 않은 결과는 수치를 채우지 않고 미실행으로 표시합니다. 구현된 규칙 수는 운영 성공 횟수가 아닙니다. <a href="/api/checks">학생 자기 점검 API</a>는 별도 연습 결과입니다.</p>
       <button type="button" data-refresh>지금 다시 확인</button>
       <p data-state aria-live="polite">서버 기록 대기 중입니다.</p>
       <dl id="ops-stats" class="ops-counts">
-        <dt>점검 항목</dt><dd data-k="total">-</dd>
-        <dt>막은 공격</dt><dd data-k="blocked">-</dd>
-        <dt>뚫린 공격</dt><dd data-k="failed">-</dd>
-        <dt>실행하지 않은 점검</dt><dd data-k="notRun">-</dd>
+        <dt>점검 항목</dt><dd data-k="total">미실행</dd>
+        <dt>막은 공격</dt><dd data-k="blocked">미실행</dd>
+        <dt>뚫린 공격</dt><dd data-k="failed">미실행</dd>
+        <dt>실행하지 않은 점검</dt><dd data-k="notRun">미실행</dd>
       </dl>
       <p data-value="meta"></p>
       <h3>판정기 규칙</h3><p data-value="rules"></p>
