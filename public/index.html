@@ -33,12 +33,6 @@
     #auth-error { color: #ffb7c3; }
     #device-state { color: #8ad8df; }
     #install-button, #device-recheck { margin-top: 10px; }
-    .ops-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .ops-counts div { padding: 12px; border: 1px solid #51667c; border-radius: 10px; }
-    .ops-counts dt { color: #bfd0e5; }
-    .ops-counts dd { margin: 6px 0 0; font-size: 25px; font-weight: 700; }
-    #check-records li { overflow-wrap: anywhere; }
-    #check-records small { display: block; margin-top: 5px; color: #bfd0e5; }
     [hidden] { display: none !important; }
   </style>
 </head>
@@ -79,24 +73,6 @@
       <p id="note-error" role="alert" hidden></p>
     </form>
     <ul id="notes" aria-live="polite" hidden></ul>
-    <section class="auth" aria-labelledby="ops-heading">
-      <h2 id="ops-heading">탈환 작전실</h2>
-      <p>서버 기록: <a href="/api/ops">/api/ops</a> · <a href="/ops.html">작전실 상세 화면</a></p>
-      <p>학생 작업: 이 화면, 자료 API, 판정·탐지 규칙, 자기 점검. 제공 엔진: ALEPH SDP 엔진의 신원·기기 확인, 판정 집행, 권한 회수·복원·감사 기록. 외부 서비스: Vercel·Supabase. 이 화면은 학생 자기 점검 결과를 보여 줍니다.</p>
-      <p>아래 수치는 이번 조회에서 실제 요청한 학생 자기 점검만 셉니다. 실제 배포 응답, 고정 가상 연습, 미실행 항목을 구분합니다. 운영 심판의 시험 결과는 집계하지 않습니다.</p>
-      <button id="ops-refresh" type="button">지금 다시 확인</button>
-      <p id="ops-state" aria-live="polite">서버 점검 기록을 읽는 중입니다.</p>
-      <dl id="ops-stats" class="ops-counts">
-        <div><dt>점검 항목</dt><dd id="ops-total" data-k="total">-</dd></div>
-        <div><dt>막은 공격</dt><dd id="ops-blocked" data-k="blocked">-</dd></div>
-        <div><dt>뚫린 공격</dt><dd id="ops-failed" data-k="failed">-</dd></div>
-        <div><dt>실행하지 않은 점검</dt><dd id="ops-not-run" data-k="notRun">-</dd></div>
-      </dl>
-      <p id="ops-policy"></p>
-      <p id="ops-detection"></p>
-      <p id="ops-restore"></p>
-      <ul id="check-records"></ul>
-    </section>
   </main>
   <script type="module">
     const loginForm = document.querySelector('#login-form');
@@ -115,9 +91,6 @@
     const deviceState = document.querySelector('#device-state');
     const deviceRecheck = document.querySelector('#device-recheck');
     const installButton = document.querySelector('#install-button');
-    const opsRefresh = document.querySelector('#ops-refresh');
-    const opsState = document.querySelector('#ops-state');
-    const checkRecords = document.querySelector('#check-records');
     let activeSession = null;
     let deviceApproved = false;
     let deviceCheckVersion = 0;
@@ -325,57 +298,6 @@
       installButton.hidden = true;
     });
 
-    async function loadOps() {
-      opsRefresh.disabled = true;
-      opsState.textContent = '서버가 공개 배포에 점검 요청을 보내는 중입니다.';
-      try {
-        const response = await fetch('/api/ops', { cache: 'no-store' });
-        if (!response.ok) throw new Error('점검 기록을 읽지 못했습니다.');
-        const snapshot = await response.json();
-        if (snapshot.schema !== 'aleph.ops.v1' || !Array.isArray(snapshot.items)) {
-          throw new Error('점검 기록 형식이 맞지 않습니다.');
-        }
-        const counts = { total: snapshot.items.length, blocked: 0, failed: 0, notRun: 0 };
-        for (const check of snapshot.items) {
-          if (check.result === 'blocked') counts.blocked++;
-          else if (check.result === 'breached') counts.failed++;
-          else if (check.result === 'not_run') counts.notRun++;
-          else throw new Error('알 수 없는 점검 결과입니다.');
-        }
-        if (Object.keys(counts).some(key => !Number.isInteger(snapshot.summary?.[key])
-            || counts[key] !== snapshot.summary[key])) {
-          throw new Error('화면 수치와 서버 기록이 일치하지 않습니다.');
-        }
-        const labels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행 또는 응답 미확인' };
-        checkRecords.replaceChildren(...snapshot.items.map(check => {
-          const item = document.createElement('li');
-          const title = document.createElement('strong');
-          const detail = document.createElement('small');
-          title.textContent = `${check.expected} · ${labels[check.result]}`;
-          detail.textContent = `${check.source} · ${check.observed} · 요청 ID ${check.requestId ?? '미제공'}`;
-          item.append(title, detail);
-          return item;
-        }));
-        document.querySelector('#ops-total').textContent = String(counts.total);
-        document.querySelector('#ops-blocked').textContent = String(counts.blocked);
-        document.querySelector('#ops-failed').textContent = String(counts.failed);
-        document.querySelector('#ops-not-run').textContent = String(counts.notRun);
-        document.querySelector('#ops-policy').textContent = `판정기 규칙: ${snapshot.rules.ids.join(', ')}`;
-        document.querySelector('#ops-detection').textContent = '탐지·회수: 학생 코드의 가상 사건 연습; 실제 권한 회수는 미실행';
-        document.querySelector('#ops-restore').textContent = `복구: ${snapshot.recovery.reason}`;
-        opsState.textContent = `점검 수집 시각 ${snapshot.checkedAt} · 배포 커밋 ${snapshot.commit?.slice(0, 12) ?? '미제공'} · 학생 자기 점검이며 운영 심판 판정은 아닙니다.`;
-      } catch (error) {
-        checkRecords.replaceChildren();
-        for (const id of ['ops-total', 'ops-blocked', 'ops-failed', 'ops-not-run']) {
-          document.getElementById(id).textContent = '-';
-        }
-        opsState.textContent = error.message;
-      } finally {
-        opsRefresh.disabled = false;
-      }
-    }
-    opsRefresh.addEventListener('click', () => void loadOps());
-
     noteForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       noteError.hidden = true;
@@ -431,7 +353,6 @@
     });
 
     setSession(null);
-    void loadOps();
   </script>
 </body>
 </html>
