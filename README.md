@@ -148,3 +148,13 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`, `SUPABASE
 별도 읽기 모듈은 지정한 다섯 항목만 출력하고 비밀값 의심 값을 가립니다. `respond.mjs`는 검증된 해당 기기에만 기본 10분 만료·근거 경보 번호가 있는 추가 거부 규칙을 저장하고 `xdr/alerts.log`에 한 줄씩 알립니다. 같은 기기의 후속 요청에는 저장한 활성 규칙이 적용되며 기존 ZTNA·CVE 검사와 다른 기기는 유지합니다. 생성 규칙·로그는 Git에서 제외합니다.
 
 다시 실행: `npm run xdr:run -- persistence`. 가상 경보 24건의 결과는 block 8·alert 8·record 8이며 정상 이벤트 차단은 0건입니다. 관련 로컬 시험 19개가 통과했습니다. 대응 재입력 시험은 `node --test test/persistence-respond.test.mjs`이며 임시 저장소·명시적인 가상 기기 연결·시험 시각을 사용합니다. 설정 단계는 12를 유지하고 실제로 실행하지 않은 운영 격리·심판 판정을 완료로 보고하지 않습니다.
+
+## 보너스 XDR: xdr-05 권한 상승 저장점
+
+`npm run xdr:run -- privilege`로 관리자 그룹 변경·새 관리자 권한 사용·비정상 명령의 가상 경보를 검사합니다. 명확한 복합 근거는 block, 모호한 시도는 alert, 정상 활동은 record입니다. 같은 계정·PC의 그룹 추가와 명령 실행을 순서대로 결합하고, 검증된 OS 계정↔가명 주체 연결이 맞을 때만 해당 계정의 추가 접근 제한·회수 요청 결정을 반환합니다. 다른 계정과 기존 ZTNA·CVE·PC 격리는 보존합니다.
+
+실제 평소 권한 목록·계정 연결·운영 경보·세션 무효화 API는 미연결입니다. 로컬 제한 결정을 실제 로그인 세션 회수 완료로 보고하지 않습니다. 자세한 범위와 연결 방법은 [권한 상승 모듈 안내](xdr/privilege/README.md)에 있으며 별도 화면 버튼은 없습니다.
+
+읽기 모듈은 경보 26건을 지정한 다섯 항목의 26줄로 추출하고 비밀값 의심 값을 가립니다. `respond.mjs`는 검증된 계정 연결과 명확한 차단 후보에만 기본 10분 만료·근거 경보 번호가 있는 거부 규칙을 저장합니다. 같은 반·프로젝트의 해당 계정에만 적용하며 기존 판정 규칙을 보존합니다. 생성 규칙은 `artifacts/privilege-deny-rules.json`, 알림은 `xdr/alerts.log`이며 Git에서 제외합니다.
+
+다시 실행: `npm run xdr:run -- privilege`. 이번 저장점의 로컬 가상 경보 결과는 block 9·alert 8·record 9, 정상 이벤트 9건 중 차단 0건입니다. 재현 시험은 `node --test test/privilege.test.mjs test/privilege-read-alerts.test.mjs test/privilege-respond.test.mjs`이며 12개가 통과했습니다. 명확한 공격 계정만 제한되고 정상·모호한 이벤트로 거부 규칙을 만들지 않으며 만료 뒤 기존 판정을 따라야 합니다. 설정 단계는 12를 유지합니다. Git 커밋명은 「보너스 xdr-05 저장점」이며 운영 집행·심판 통과 결과가 아닙니다.
