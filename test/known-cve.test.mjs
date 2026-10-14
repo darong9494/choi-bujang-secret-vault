@@ -28,9 +28,28 @@ test('labels, severity and counts alone cannot cause a block', () => {
     data: { url: '/health', count: '99999' } });
   assert.equal(result.action, 'alert');
   assert.equal(decide({ data: { url: '/health' } }).action, 'record');
-  assert.equal(decide(null).action, 'alert');
-  assert.equal(decide({ data: { useragent: {} } }).action, 'alert');
-  assert.equal(decide({ data: { url: 'x'.repeat(16385) } }).action, 'alert');
+  assert.equal(decide(null).action, 'record');
+  assert.equal(decide({ data: { useragent: {} } }).action, 'record');
+  assert.equal(decide({ data: { url: 'x'.repeat(16385) } }).action, 'record');
+});
+
+test('single-file offline module preserves documented patterns and score thresholds', async t => {
+  const source = await readFile(new URL('../xdr/known-cve/decide.mjs', import.meta.url), 'utf8');
+  const documented = JSON.parse(await readFile(new URL('../xdr/known-cve/patterns.json', import.meta.url), 'utf8'));
+  assert.doesNotMatch(source, /\bimport\b|\brequire\s*\(|\bfetch\s*\(/u);
+  const embedded = JSON.parse(source.slice(source.indexOf('['), source.indexOf('.map(pattern')));
+  assert.deepEqual(embedded, documented.patterns);
+  t.mock.method(globalThis, 'fetch', () => { throw new Error('Offline module'); });
+  // No filesystem base URL exists here, so a relative module dependency cannot resolve.
+  const isolated = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+  assert.deepEqual(Object.keys(isolated), ['decide']);
+  for (const alert of [...fixture.alerts, null, {}, { data: { url: 123 } }]) {
+    const out = isolated.decide(alert);
+    assert.ok(isDecision(out));
+    assert.equal(out.action, out.confidence >= 0.85 ? 'block' : out.confidence >= 0.5 ? 'alert' : 'record');
+    assert.doesNotMatch(out.reason, /[\r\n]/u);
+    if (out.confidence >= 0.5) assert.ok(documented.patterns.some(pattern => pattern.name === out.reason));
+  }
 });
 
 test('inspection can restrict an allow but never bypass deny or step_up', async () => {

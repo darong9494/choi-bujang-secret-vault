@@ -134,3 +134,5 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`, `SUPABASE
 ## 보너스 XDR: 알려진 취약점 요청 검사
 
 `npm run xdr:run -- known-cve`로 기존 가상 경보를 검사합니다. 완전한 리터럴 원격 조회 형태는 `block`, 모호한 흔적은 `alert`, 일반 요청은 `record`입니다. CVE·MITRE 출처, 지원 범위와 결합 순서는 [모듈 안내](xdr/known-cve/README.md)에 있습니다. `checkAccess(request, alert)`는 기존 ZTNA 응답을 유지하면서 추가 검사 결과를 결합하며 기존 거부·추가 확인을 허용으로 바꾸지 않습니다. 운영 경보 전달·알림 채널·차단 집행은 미연결이고 기존 판정기 계약과 자료실 기능은 보존합니다. 별도 화면 버튼은 없습니다.
+
+보너스 xdr-03 저장점: 단독 실행 판정기의 패턴 상수·확신도 기준, 비밀값을 가리는 별도 읽기 모듈, 만료형 추가 거부 규칙과 한 줄 알림 기록을 포함합니다. `node xdr/known-cve/respond.mjs --fixture`는 로컬 대응 시험이며 기존 ZTNA 규칙을 변경하지 않습니다. 규칙 파일과 `xdr/alerts.log`는 Git에 넣지 않습니다. `npm run xdr:run -- known-cve` 재실행 결과는 block 8·alert 8·record 8이고 정상 이벤트 차단은 0건입니다. 단계 설정은 12를 유지하며 이 결과는 운영 엔진 집행이나 심판 통과 기록이 아닙니다.
