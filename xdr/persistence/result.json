@@ -1,0 +1,155 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "persistence",
+  "decisions": [
+    {
+      "alertId": "ps-01",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 서비스 등록·변조"
+    },
+    {
+      "alertId": "ps-02",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 예약 작업"
+    },
+    {
+      "alertId": "ps-03",
+      "action": "block",
+      "confidence": 0.9,
+      "reason": "평소 목록에 없는 실행 파일의 시작 폴더 추가"
+    },
+    {
+      "alertId": "ps-04",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 서비스 등록·변조"
+    },
+    {
+      "alertId": "ps-05",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 예약 작업"
+    },
+    {
+      "alertId": "ps-06",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 서비스 등록·변조"
+    },
+    {
+      "alertId": "ps-07",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 예약 작업"
+    },
+    {
+      "alertId": "ps-08",
+      "action": "block",
+      "confidence": 0.95,
+      "reason": "의심 근거가 결합된 서비스 등록·변조"
+    },
+    {
+      "alertId": "ps-09",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-10",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-11",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-12",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-13",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-14",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-15",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-16",
+      "action": "alert",
+      "confidence": 0.55,
+      "reason": "확정할 수 없는 지속성 관련 변경"
+    },
+    {
+      "alertId": "ps-17",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-18",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-19",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-20",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-21",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-22",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-23",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    },
+    {
+      "alertId": "ps-24",
+      "action": "record",
+      "confidence": 0,
+      "reason": "일치하는 지속성 악용 패턴 없음"
+    }
+  ],
+  "counts": {
+    "block": 8,
+    "alert": 8,
+    "record": 8
+  }
+}
