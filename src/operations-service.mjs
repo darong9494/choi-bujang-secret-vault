@@ -1,5 +1,5 @@
 import { RULE_IDS } from './decider.mjs';
-import { projectRecord } from '../public/ops-contract.js';
+import { projectRecord, unavailableDomains } from '../public/ops-contract.js';
 
 export async function readOperationsRecord() {
   // The current repository has no official operational-record reader or source contract.
@@ -25,7 +25,8 @@ export function createOperationsHandler({ readRecord = readOperationsRecord } = 
         ? 'operations_source_not_connected' : 'operations_record_unavailable';
       // No fabricated empty summary; no source exceptions or private content are exposed.
       return res.status(503).json({ schema: 'aleph.ops.v1', status: 'unavailable', error: code,
-        queriedAt: new Date().toISOString(), rules: { count: RULE_IDS.length, ids: [...RULE_IDS] } });
+        queriedAt: new Date().toISOString(), rules: { count: RULE_IDS.length, ids: [...RULE_IDS] },
+        domains: unavailableDomains() });
     }
   };
 }

@@ -16,6 +16,7 @@
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { border-bottom: 1px solid #51667c; padding: 12px; text-align: left; overflow-wrap: anywhere; }
     [data-meta], [data-rules] { overflow-wrap: anywhere; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -25,6 +26,7 @@
     <p>운영 판정·탐지·회수·복구 결과를 확인하는 화면입니다. 현재 운영 원본 조회 연결은 없으며, 연결 전에는 수치를 표시하지 않습니다. 성공 문구·가상 연습·화면 숫자로 최종 클리어를 주장하지 않습니다.</p>
     <button type="button" data-refresh>운영 결과 다시 조회</button>
     <p data-state aria-live="polite">운영 원본 확인 대기 중입니다.</p>
+    <p data-api>작전실 API 응답 확인 전</p>
     <section class="card">
       <h2>같은 서버 기록에서 확인한 결과</h2>
       <dl class="stats">
@@ -34,6 +36,7 @@
       </dl>
       <p>‘원본 미연결’은 실행 횟수 0건이나 미실행 항목 수를 뜻하지 않습니다. 원본이 없으면 합계를 계산하지 않습니다.</p>
       <p data-meta></p>
+      <p data-comparison></p>
     </section>
     <section class="card">
       <h2>구현된 규칙</h2><p data-rules>서버의 규칙 목록 확인 대기 중입니다.</p>
@@ -42,7 +45,7 @@
         <dt>판정</dt><dd data-domain="decision">결과 원본 미확인</dd>
         <dt>탐지</dt><dd data-domain="detection">결과 원본 미확인</dd>
         <dt>회수</dt><dd data-domain="revocation">결과 원본 미확인</dd>
-        <dt>복구</dt><dd data-domain="recovery">결과 원본 미확인</dd>
+        <dt>복구 상태·버전</dt><dd data-domain="recovery">결과 원본 미확인</dd>
       </dl>
     </section>
     <section class="card">
@@ -52,6 +55,11 @@
         <thead><tr><th>번호</th><th>분야</th><th>실제 결과</th><th>기록 시각</th><th>정책 버전</th></tr></thead>
         <tbody data-rows></tbody>
       </table></div>
+      <details>
+        <summary>이번 응답의 가린 서버 기록 JSON 펼치기</summary>
+        <p>위 화면을 그린 같은 응답입니다. 별도 조회로 다른 시점의 기록을 가져오지 않습니다.</p>
+        <pre data-evidence></pre>
+      </details>
     </section>
     <p>학생 코드: 자료실·판정·탐지 규칙·이 화면. 제공 ALEPH SDP 엔진: 신원·기기 확인과 집행·회수·복원·감사. 외부 서비스: Vercel·Supabase. 12단계 통과 및 41종 방어 판정은 제출 포털에서 확인합니다.</p>
   </main>
