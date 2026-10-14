@@ -130,3 +130,11 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`, `SUPABASE
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
+
+## 보너스 xdr-03 저장점: 알려진 취약점 악용 검사
+
+`xdr/known-cve/decide.mjs`는 패턴 상수를 가진 단독 판정 모듈입니다. CVE-2021-44228·MITRE T1190 근거와 모호한 보조 신호를 구분하고, 완전한 악용 형태만 block, 모호한 흔적은 alert, 일반 이벤트는 record로 분류합니다. 별도 읽기 모듈은 지정한 다섯 항목만 추출하고 비밀값 의심 필드를 가립니다.
+
+다시 실행: `npm run xdr:run -- known-cve`. 가상 경보 24건의 `result.json` 집계는 block 8·alert 8·record 8이며 정상 이벤트 차단은 0건입니다. 관련 로컬 시험 13개가 통과했습니다. 별도 화면 버튼은 없습니다.
+
+`node xdr/known-cve/respond.mjs --fixture`는 명확한 공격 요청 지문에만 기본 10분 만료·근거 경보 번호가 있는 추가 거부 규칙을 저장하고 알림을 `xdr/alerts.log`에 한 줄씩 남깁니다. 규칙·로그는 Git에서 제외합니다. `check-access.mjs`가 기존 ZTNA 규칙을 보존하며 추가 검사를 결합합니다. 운영 ALEPH SDP 엔진의 경보 전달·집행과 공용 저장소는 미연결입니다. 단계는 12를 유지하며 로컬 결과를 운영 차단·심판 통과로 보고하지 않습니다. 자세한 범위와 재현 방법은 [모듈 안내](xdr/known-cve/README.md)에 있습니다.
