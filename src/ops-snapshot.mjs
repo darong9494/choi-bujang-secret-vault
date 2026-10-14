@@ -9,20 +9,23 @@ const fixtureIds = new Set([
 
 // Both APIs publish the same record shape; no saved receipt or assumed result is used.
 export async function collectOpsSnapshot(config) {
-  const attempts = await runAttackChecks(config);
+  const receipts = new Map();
+  const attempts = await runAttackChecks(config, {
+    onResponse: (id, metadata) => receipts.set(id, metadata),
+  });
   const checkedAt = new Date().toISOString();
   const deploymentCommit = process.env.VERCEL_GIT_COMMIT_SHA;
   const commit = typeof deploymentCommit === 'string' && /^[a-f0-9]{40}$/u.test(deploymentCommit)
     ? deploymentCommit : null;
   const items = attempts.map(attempt => {
     const status = /^HTTP (\d{3})(?:;|$)/u.exec(attempt.observed);
-    const id = /; requestId=([a-zA-Z0-9:._-]{1,100})(?:;|$)/u.exec(attempt.observed);
     const source = attempt.observed === 'network_error' ? '요청 후 응답 확인 실패'
       : attempt.result === 'not_run' ? '요청 미실행'
       : fixtureIds.has(attempt.attackId) ? '학생 판정기·탐지 가상 연습' : '배포 API 실측';
     return { ...attempt, source,
       kind: attempt.result === 'not_run' ? 'not_run' : 'live_api',
-      httpStatus: status ? Number(status[1]) : null, requestId: id?.[1] ?? null };
+      httpStatus: status ? Number(status[1]) : null,
+      requestId: receipts.get(attempt.attackId)?.requestId ?? null };
   });
   const count = result => items.filter(item => item.result === result).length;
   return {

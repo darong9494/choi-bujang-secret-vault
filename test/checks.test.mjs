@@ -17,7 +17,9 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
     const path = new URL(url).pathname;
     const status = path === '/' || path === '/api/checks' ? 200
       : path.startsWith('/api/restore/') ? 404 : 401;
-    return new Response(path === '/api/checks' ? '{"ready":true}' : '{}', { status });
+    return new Response(path === '/api/checks' ? '{"ready":true}' : '{}', {
+      status, headers: { 'x-vercel-id': `fixture-${calls.length}` },
+    });
   };
   async function snapshot(api = handler) {
     let body;
@@ -41,6 +43,10 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
     assert.equal(first.checks.filter(check => check.source === '학생 판정기·탐지 가상 연습').length, 6);
     assert.ok(first.checks.filter(check => check.result === 'not_run')
       .every(check => check.observed === 'not_run'));
+    for (const item of first.checks.filter(check => check.result !== 'not_run')) {
+      assert.match(item.observed, /^HTTP \d{3}; bodyBytes=\d+(?:; jsonReady=(?:true|false))?$/u);
+      assert.match(item.requestId, /^fixture-\d+$/u);
+    }
     unavailable = true;
     const second = await snapshot();
     assert.deepEqual(second.totals, { total: 17, blocked: 0, failed: 0, notRun: 17 });
@@ -53,6 +59,8 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
     const ops = await snapshot(opsHandler);
     assert.equal(ops.schema, 'aleph.ops.v1');
     assert.deepEqual(ops.summary, first.totals);
+    assert.deepEqual(ops.items.map(item => item.observed), first.checks.map(item => item.observed));
+    assert.notEqual(ops.items[0].requestId, first.checks[0].requestId);
     assert.equal(ops.items.length, ops.summary.total);
     assert.equal(ops.items.filter(item => item.kind === 'not_run').length, 5);
     assert.deepEqual(ops.rules.ids, RULE_IDS);

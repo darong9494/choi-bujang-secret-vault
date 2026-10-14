@@ -27,8 +27,7 @@ function recorded(attackId, stage, expected, response, accepts) {
   // fetch was called, but no response could be verified. Keep this distinct from an unsent check.
   if (!response.ran) return { attackId, stage, expected, observed: 'network_error', result: 'not_run' };
   const observed = `HTTP ${response.status}; bodyBytes=${response.bodyBytes}`
-    + (typeof response.ready === 'boolean' ? `; jsonReady=${response.ready}` : '')
-    + (response.requestId ? `; requestId=${response.requestId}` : '');
+    + (typeof response.ready === 'boolean' ? `; jsonReady=${response.ready}` : '');
   return { attackId, stage, expected, observed,
     result: accepts(response) ? 'blocked' : 'breached' };
 }
@@ -37,7 +36,7 @@ function unrun(attackId, stage, expected) {
   return { attackId, stage, expected, observed: 'not_run', result: 'not_run' };
 }
 
-export async function runAttackChecks(configOrUrl) {
+export async function runAttackChecks(configOrUrl, { onResponse } = {}) {
   const config = typeof configOrUrl === 'object' && configOrUrl !== null ? configOrUrl : null;
   const base = new URL(config?.publicAppUrl ?? configOrUrl);
   if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash
@@ -89,8 +88,11 @@ export async function runAttackChecks(configOrUrl) {
     checks.push([id, stage, `/api/checks?case=${id}`, expected, {},
       r => r.status === 200 && r.ready === true]);
   }
-  const attempts = await Promise.all(checks.map(async ([id, stage, path, expected, headers, accepts]) =>
-    recorded(id, stage, expected, await probe(base, path, id, headers), accepts)));
+  const attempts = await Promise.all(checks.map(async ([id, stage, path, expected, headers, accepts]) => {
+    const response = await probe(base, path, id, headers);
+    onResponse?.(id, { requestId: response.requestId ?? null });
+    return recorded(id, stage, expected, response, accepts);
+  }));
 
   for (const [id, stage, expected] of [
     ['registered_device_read_live', 11, '등록된 실기기 메모 읽기'],
