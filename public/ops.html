@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>탈환 작전실 | BYTE BACK</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101a28; color: #ecf4ff; }
+    main { max-width: 1050px; margin: auto; padding: 36px 20px; }
+    p { line-height: 1.7; color: #bfd0e5; } a { color: #8ad8df; }
+    .card { margin: 20px 0; padding: 20px; border: 1px solid #51667c; border-radius: 14px; background: #142235; }
+    .stats, .domains { display: grid; gap: 12px 24px; grid-template-columns: max-content 1fr; } dd { margin: 0; }
+    button { padding: 10px 18px; background: #8ad8df; color: #101a28; border: 0; border-radius: 8px; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; } .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid #51667c; padding: 12px; text-align: left; overflow-wrap: anywhere; }
+    [data-meta], [data-rules] { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main data-operations>
+    <a href="/">자료실로 돌아가기</a>
+    <h1>탈환 작전실</h1>
+    <p>운영 판정·탐지·회수·복구 결과를 확인하는 화면입니다. 현재 운영 원본 조회 연결은 없으며, 연결 전에는 수치를 표시하지 않습니다. 성공 문구·가상 연습·화면 숫자로 최종 클리어를 주장하지 않습니다.</p>
+    <button type="button" data-refresh>운영 결과 다시 조회</button>
+    <p data-state aria-live="polite">운영 원본 확인 대기 중입니다.</p>
+    <section class="card">
+      <h2>같은 서버 기록에서 확인한 결과</h2>
+      <dl class="stats">
+        <dt>전체 기록</dt><dd data-number="total">—</dd>
+        <dt>실행 결과가 있는 기록</dt><dd data-number="recorded">—</dd>
+        <dt>미실행으로 기록된 항목</dt><dd data-number="notRun">—</dd>
+      </dl>
+      <p>‘원본 미연결’은 실행 횟수 0건이나 미실행 항목 수를 뜻하지 않습니다. 원본이 없으면 합계를 계산하지 않습니다.</p>
+      <p data-meta></p>
+    </section>
+    <section class="card">
+      <h2>구현된 규칙</h2><p data-rules>서버의 규칙 목록 확인 대기 중입니다.</p>
+      <h2>운영 결과</h2>
+      <dl class="domains">
+        <dt>판정</dt><dd data-domain="decision">결과 원본 미확인</dd>
+        <dt>탐지</dt><dd data-domain="detection">결과 원본 미확인</dd>
+        <dt>회수</dt><dd data-domain="revocation">결과 원본 미확인</dd>
+        <dt>복구</dt><dd data-domain="recovery">결과 원본 미확인</dd>
+      </dl>
+    </section>
+    <section class="card">
+      <h2>가린 서버 기록</h2>
+      <p>원본을 읽을 수 있을 때 허용된 결과·시각·정책 버전만 표시합니다. 메모 본문·계정·기기 ID·토큰은 표시하지 않습니다.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>번호</th><th>분야</th><th>실제 결과</th><th>기록 시각</th><th>정책 버전</th></tr></thead>
+        <tbody data-rows></tbody>
+      </table></div>
+    </section>
+    <p>학생 코드: 자료실·판정·탐지 규칙·이 화면. 제공 ALEPH SDP 엔진: 신원·기기 확인과 집행·회수·복원·감사. 외부 서비스: Vercel·Supabase. 12단계 통과 및 41종 방어 판정은 제출 포털에서 확인합니다.</p>
+  </main>
+  <script type="module" src="/ops-view.js"></script>
+</body>
+</html>
