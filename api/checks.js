@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { runRuleCheck } from '../src/rule-check.mjs';
 import { RULE_IDS } from '../src/decider.mjs';
+import { runAttackChecks } from '../src/attack-check.mjs';
 
-const record = JSON.parse(readFileSync(new URL('../src/ops-record.json', import.meta.url), 'utf8'));
+const config = JSON.parse(readFileSync(new URL('../aleph.config.json', import.meta.url), 'utf8'));
 const fixtureIds = new Set([
   'registered_device_read', 'unregistered_device_read',
   'composite_risk_step_up', 'engine_verified_step_up',
@@ -39,20 +40,18 @@ export default async function handler(req, res) {
     return result ? res.status(200).json(result) : res.status(400).json({ error: 'unknown_check' });
   }
   try {
-    if (record.schema !== 'aleph.student-check-record.v1' || !Array.isArray(record.attackAttempts)) {
-      throw new Error('invalid_record');
-    }
-    const { checks, totals } = summarize(record.attackAttempts);
+    const attempts = await runAttackChecks(config);
+    const { checks, totals } = summarize(attempts);
     const deploymentCommit = process.env.VERCEL_GIT_COMMIT_SHA;
     const currentCommit = typeof deploymentCommit === 'string' && /^[a-f0-9]{40}$/u.test(deploymentCommit)
       ? deploymentCommit : null;
     return res.status(200).json({
-      schema: 'aleph.ops.snapshot.v1', checkedAt: record.checkedAt,
-      commit: currentCommit, recordedCommit: record.commit,
+      schema: 'aleph.ops.snapshot.v1', checkedAt: new Date().toISOString(),
+      commit: currentCommit, recordedCommit: currentCommit,
       totals, checks, policyRules: [...RULE_IDS],
       detection: '학생 코드의 가상 사건 연습; 실제 권한 회수는 미실행',
       restore: '9단계 통과 커밋은 복구 기준 후보; 엔진 복원은 미실행',
-      note: '저장된 학생 자기 점검 기록입니다. 점검 대상 커밋은 별도로 표시합니다. 운영 심판의 41종 시험 결과는 이 수치에 포함하지 않습니다.',
+      note: '이번 조회에서 실제 요청한 학생 자기 점검 결과입니다. 가상 연습과 미실행 항목을 구분하며 운영 심판의 시험 결과는 포함하지 않습니다.',
     });
   } catch {
     return res.status(503).json({ error: 'checks_unavailable' });

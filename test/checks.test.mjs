@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import handler from '../api/checks.js';
+import { readFile } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
+import { decide, RULE_IDS } from '../src/decider.mjs';
+import { checkDecider } from '../scripts/decider-test.mjs';
+
+test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이전 성공을 쓰지 않는다', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  let unavailable = false;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: new URL(url), options });
+    if (unavailable) throw new Error('offline');
+    const path = new URL(url).pathname;
+    const status = path === '/' || path === '/api/checks' ? 200
+      : path.startsWith('/api/restore/') ? 404 : 401;
+    return new Response(path === '/api/checks' ? '{"ready":true}' : '{}', { status });
+  };
+  async function snapshot() {
+    let body;
+    await handler({ method: 'GET', query: {} }, {
+      setHeader() {},
+      status(value) { assert.equal(value, 200); return this; },
+      json(value) { body = value; },
+    });
+    return body;
+  }
+  try {
+    const first = await snapshot();
+    assert.deepEqual(first.totals, { total: 17, blocked: 12, failed: 0, notRun: 5 });
+    assert.equal(calls.length, 12);
+    assert.ok(calls.every(call => call.options.signal instanceof AbortSignal));
+    assert.ok(calls.filter(call => call.url.pathname === '/api/checks')
+      .every(call => call.url.searchParams.has('case')));
+    assert.equal(first.checks.filter(check => check.source === '학생 판정기·탐지 가상 연습').length, 6);
+    assert.ok(first.checks.filter(check => check.result === 'not_run')
+      .every(check => check.observed === 'not_run'));
+    unavailable = true;
+    const second = await snapshot();
+    assert.deepEqual(second.totals, { total: 17, blocked: 0, failed: 0, notRun: 17 });
+    assert.equal(calls.length, 24);
+    assert.equal(second.checks.filter(check => check.observed === 'network_error').length, 12);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('판정기는 계약에 있는 요청 이름만 읽고 등록된 규칙으로 응답한다', async () => {
+  const names = new Set(['schema', 'requestId', 'classId', 'projectId', 'subjectId',
+    'deviceId', 'service', 'method', 'path', 'route', 'queryLength', 'querySha256',
+    'at', 'policyRevision', 'deviceRegistered', 'stepUp', 'recentEvents', 'signals']);
+  const results = await checkDecider({ ruleIds: RULE_IDS, decide: request => decide(new Proxy(request, {
+    get(target, name) {
+      assert.ok(names.has(name), `계약에 없는 요청 이름: ${String(name)}`);
+      return target[name];
+    },
+  })) });
+  assert.equal(results.length, 4);
+  assert.ok(results.every(result => result.passed));
+});
+
+test('화면 수치는 API 합계와 같고 API 오류 뒤에 이전 수치를 남기지 않는다', async () => {
+  const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  const source = html.slice(html.indexOf('    async function loadOps()'),
+    html.indexOf('    opsRefresh.addEventListener'));
+  const elements = new Map();
+  const element = id => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', append() {}, replaceChildren() {} });
+    return elements.get(id);
+  };
+  let fail = false;
+  const context = {
+    opsRefresh: {}, opsState: element('state'), checkRecords: element('records'),
+    document: { querySelector: element, getElementById: id => element(`#${id}`), createElement: () => element(Symbol()) },
+    fetch: async () => ({ ok: !fail, json: async () => ({
+      schema: 'aleph.ops.snapshot.v1', totals: { total: 3, blocked: 1, failed: 1, notRun: 1 },
+      checks: ['blocked', 'breached', 'not_run'].map(result => ({ result })), policyRules: [],
+    }) }),
+  };
+  await runInNewContext(`${source}\nloadOps()`, context);
+  assert.equal(element('#ops-total').textContent, '3');
+  for (const id of ['blocked', 'failed', 'not-run']) assert.equal(element(`#ops-${id}`).textContent, '1');
+  fail = true;
+  await runInNewContext('loadOps()', context);
+  for (const id of ['total', 'blocked', 'failed', 'not-run']) assert.equal(element(`#ops-${id}`).textContent, '-');
+});

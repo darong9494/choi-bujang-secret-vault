@@ -7,6 +7,7 @@ async function probe(base, path, attackId, headers = {}) {
     const response = await fetch(new URL(path, base), {
       headers: { Accept: 'application/json', ...headers },
       redirect: 'manual',
+      signal: AbortSignal.timeout(5000),
       alephEvidence: { caseId: attackId, requestKey: 'read' },
     });
     const body = await response.text();
@@ -76,11 +77,6 @@ export async function runAttackChecks(configOrUrl) {
     ['query_identity_spoof', 4, `/api/notes?user_id=${TEST_ID}`, '쿼리 신원 위조 거부', {},
       r => r.status === 401 && !r.hasNotes],
   ];
-  const attempts = [];
-  for (const [id, stage, path, expected, headers, accepts] of checks) {
-    attempts.push(recorded(id, stage, expected, await probe(base, path, id, headers), accepts));
-  }
-
   // Fixed virtual inputs are executed through the deployed API so each case has one HTTP receipt.
   for (const [id, stage, expected] of [
     ['registered_device_read', 6, '등록 기기 가상 요청 허용'],
@@ -90,10 +86,11 @@ export async function runAttackChecks(configOrUrl) {
     ['normal_read_detection', 9, '정상 조회 가상 사건 관찰'],
     ['unusual_network_burst_revocation_proposal', 9, '조회 폭주 가상 사건 회수 제안'],
   ]) {
-    const response = await probe(base, `/api/checks?case=${id}`, id);
-    attempts.push(recorded(id, stage, expected, response,
-      r => r.status === 200 && r.ready === true));
+    checks.push([id, stage, `/api/checks?case=${id}`, expected, {},
+      r => r.status === 200 && r.ready === true]);
   }
+  const attempts = await Promise.all(checks.map(async ([id, stage, path, expected, headers, accepts]) =>
+    recorded(id, stage, expected, await probe(base, path, id, headers), accepts)));
 
   for (const [id, stage, expected] of [
     ['registered_device_read_live', 11, '등록된 실기기 메모 읽기'],
