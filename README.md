@@ -158,3 +158,11 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`, `SUPABASE
 읽기 모듈은 경보 26건을 지정한 다섯 항목의 26줄로 추출하고 비밀값 의심 값을 가립니다. `respond.mjs`는 검증된 계정 연결과 명확한 차단 후보에만 기본 10분 만료·근거 경보 번호가 있는 거부 규칙을 저장합니다. 같은 반·프로젝트의 해당 계정에만 적용하며 기존 판정 규칙을 보존합니다. 생성 규칙은 `artifacts/privilege-deny-rules.json`, 알림은 `xdr/alerts.log`이며 Git에서 제외합니다.
 
 다시 실행: `npm run xdr:run -- privilege`. 이번 저장점의 로컬 가상 경보 결과는 block 9·alert 8·record 9, 정상 이벤트 9건 중 차단 0건입니다. 재현 시험은 `node --test test/privilege.test.mjs test/privilege-read-alerts.test.mjs test/privilege-respond.test.mjs`이며 12개가 통과했습니다. 명확한 공격 계정만 제한되고 정상·모호한 이벤트로 거부 규칙을 만들지 않으며 만료 뒤 기존 판정을 따라야 합니다. 설정 단계는 12를 유지합니다. Git 커밋명은 「보너스 xdr-05 저장점」이며 운영 집행·심판 통과 결과가 아닙니다.
+
+## 보너스 XDR: xdr-06 외부 반출 저장점
+
+`xdr/exfiltration/`에 전송 판단과 목적지별 추가 접근 검사를 추가했습니다. 실제 용량과 새 목적지·반복·비정상 통로의 복합 근거는 차단 후보, 단일 이상·실패·전송 전 압축은 알림 후보, 정상 활동은 기록으로 구분합니다. 검증된 기기 연결·최근 경보·근거 번호가 있을 때 해당 목적지만 기본 10분 동안 제한하며 기존 ZTNA·CVE·PC 격리·계정 제한을 보존합니다. 평소 목적지·전송량은 제공된 서버 기준선만 사용하고 미제공을 추측하지 않습니다.
+
+읽기 모듈은 경보 30건을 다섯 항목의 30줄로 추출하며 비밀값 의심 값을 가립니다. `respond.mjs`는 명확한 차단 후보만 검증된 기기·반·프로젝트의 정확한 목적지에 대한 거부 규칙으로 저장하며 기본 10분 만료·근거 경보 번호를 붙입니다. 같은 사건 재전송으로 만료를 연장하지 않습니다. 알림은 `xdr/alerts.log`에 한 줄씩 추가하고, 해당 로그와 `artifacts/exfiltration-deny-rules.json`은 Git에서 제외합니다.
+
+실행은 `npm run xdr:run -- exfiltration`, 연결 확인은 `node --test test/exfiltration.test.mjs test/exfiltration-read-alerts.test.mjs test/exfiltration-respond.test.mjs`입니다. 로컬 가상 경보 결과는 block 10·alert 10·record 10, 정상 이벤트 차단 0건이며 관련 시험 12개가 통과했습니다. 별도 화면 버튼은 없습니다. 명확한 공격 목적지만 제한되고 다른 정상 목적지는 통과하며 모호한 이벤트는 알림만 남겨야 합니다. 설정 단계는 12를 유지합니다. 실제 운영 경보 공급·목적지 집행은 아직 연결하지 않았습니다. 서버리스 운영에는 파일 대신 영속 저장소 연결이 필요합니다. 로컬 결정과 운영 차단 완료를 구분하며 자세한 사용법은 [외부 반출 모듈 안내](xdr/exfiltration/README.md)에 있습니다.
