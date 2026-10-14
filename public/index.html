@@ -85,11 +85,11 @@
       <p>아래 수치는 이번 조회에서 실제 요청한 학생 자기 점검만 셉니다. 실제 배포 응답, 고정 가상 연습, 미실행 항목을 구분합니다. 운영 심판의 시험 결과는 집계하지 않습니다.</p>
       <button id="ops-refresh" type="button">지금 다시 확인</button>
       <p id="ops-state" aria-live="polite">서버 점검 기록을 읽는 중입니다.</p>
-      <dl class="ops-counts">
-        <div><dt>점검 항목</dt><dd id="ops-total">-</dd></div>
-        <div><dt>막은 공격</dt><dd id="ops-blocked">-</dd></div>
-        <div><dt>뚫린 공격</dt><dd id="ops-failed">-</dd></div>
-        <div><dt>실행하지 않은 점검</dt><dd id="ops-not-run">-</dd></div>
+      <dl id="ops-stats" class="ops-counts">
+        <div><dt>점검 항목</dt><dd id="ops-total" data-k="total">-</dd></div>
+        <div><dt>막은 공격</dt><dd id="ops-blocked" data-k="blocked">-</dd></div>
+        <div><dt>뚫린 공격</dt><dd id="ops-failed" data-k="failed">-</dd></div>
+        <div><dt>실행하지 않은 점검</dt><dd id="ops-not-run" data-k="notRun">-</dd></div>
       </dl>
       <p id="ops-policy"></p>
       <p id="ops-detection"></p>
@@ -341,7 +341,8 @@
           else if (check.result === 'not_run') counts.notRun++;
           else throw new Error('알 수 없는 점검 결과입니다.');
         }
-        if (Object.keys(counts).some(key => counts[key] !== snapshot.totals?.[key])) {
+        if (Object.keys(counts).some(key => !Number.isInteger(snapshot[key])
+            || counts[key] !== snapshot[key] || counts[key] !== snapshot.totals?.[key])) {
           throw new Error('화면 수치와 서버 기록이 일치하지 않습니다.');
         }
         const labels = { blocked: '기대 응답', breached: '응답 불일치', not_run: '미실행 또는 응답 미확인' };

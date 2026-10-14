@@ -40,4 +40,6 @@
 
 가산점 조건은 Node.js 22 이상에서 새 설치가 성공하고, 판정기가 계약의 요청 이름·응답 다섯 항목과 `RULE_IDS`를 지키고, 설정의 `step`이 12인 것입니다. `npm run decider:test`는 가상 요청 연습입니다. 100점 여부는 기본 조건까지 포함한 재제출 판정에서 확인하세요. 회귀 검증은 `node --test test/checks.test.mjs`로 실행합니다.
 
+제작자의 [통과 표본 API](https://github.com/ChoiTimo/byteback-sample-pass/blob/main/api/checks.js)에 맞춰 `/api/checks` 최상위에 `total`, `blocked`, `failed`, `notRun`을 반환합니다. 상세 행과 기존 `totals`도 같은 요청 결과에서 집계합니다. 화면은 `#ops-stats`의 `data-k`로 네 항목을 표시하며, 최상위 합계·상세 행·`totals` 중 하나라도 다르면 수치를 비웁니다. 심판 내부 구현은 확인하지 못했으므로 이 형식 수정의 실제 효과는 재제출로 확인해야 합니다.
+
 이전 단계의 상세 설명은 [docs/STEP_RECORDS.md](docs/STEP_RECORDS.md)에 보존했습니다. 요청·응답 형식은 [docs/DECIDER_REQUEST.md](docs/DECIDER_REQUEST.md), 탐지 가상 사건 형식은 [docs/DETECT_EVENTS.md](docs/DETECT_EVENTS.md)를 따릅니다.

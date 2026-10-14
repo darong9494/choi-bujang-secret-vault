@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       schema: 'aleph.ops.snapshot.v1', checkedAt: new Date().toISOString(),
       commit: currentCommit, recordedCommit: currentCommit,
-      totals, checks, policyRules: [...RULE_IDS],
+      ...totals, totals, checks, policyRules: [...RULE_IDS],
       detection: '학생 코드의 가상 사건 연습; 실제 권한 회수는 미실행',
       restore: '9단계 통과 커밋은 복구 기준 후보; 엔진 복원은 미실행',
       note: '이번 조회에서 실제 요청한 학생 자기 점검 결과입니다. 가상 연습과 미실행 항목을 구분하며 운영 심판의 시험 결과는 포함하지 않습니다.',

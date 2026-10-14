@@ -30,6 +30,9 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
   try {
     const first = await snapshot();
     assert.deepEqual(first.totals, { total: 17, blocked: 12, failed: 0, notRun: 5 });
+    for (const key of ['total', 'blocked', 'failed', 'notRun']) {
+      assert.equal(first[key], first.totals[key]);
+    }
     assert.equal(calls.length, 12);
     assert.ok(calls.every(call => call.options.signal instanceof AbortSignal));
     assert.ok(calls.filter(call => call.url.pathname === '/api/checks')
@@ -40,6 +43,9 @@ test('작전실은 이번 HTTP 응답만 집계하고 실패한 재조회에 이
     unavailable = true;
     const second = await snapshot();
     assert.deepEqual(second.totals, { total: 17, blocked: 0, failed: 0, notRun: 17 });
+    for (const key of ['total', 'blocked', 'failed', 'notRun']) {
+      assert.equal(second[key], second.totals[key]);
+    }
     assert.equal(calls.length, 24);
     assert.equal(second.checks.filter(check => check.observed === 'network_error').length, 12);
   } finally {
@@ -71,17 +77,27 @@ test('화면 수치는 API 합계와 같고 API 오류 뒤에 이전 수치를 �
     return elements.get(id);
   };
   let fail = false;
+  let mismatched = false;
   const context = {
     opsRefresh: {}, opsState: element('state'), checkRecords: element('records'),
     document: { querySelector: element, getElementById: id => element(`#${id}`), createElement: () => element(Symbol()) },
     fetch: async () => ({ ok: !fail, json: async () => ({
       schema: 'aleph.ops.snapshot.v1', totals: { total: 3, blocked: 1, failed: 1, notRun: 1 },
+      total: mismatched ? 99 : 3, blocked: 1, failed: 1, notRun: 1,
       checks: ['blocked', 'breached', 'not_run'].map(result => ({ result })), policyRules: [],
     }) }),
   };
   await runInNewContext(`${source}\nloadOps()`, context);
   assert.equal(element('#ops-total').textContent, '3');
   for (const id of ['blocked', 'failed', 'not-run']) assert.equal(element(`#ops-${id}`).textContent, '1');
+  assert.match(html, /<dl id="ops-stats"/u);
+  for (const key of ['total', 'blocked', 'failed', 'notRun']) {
+    assert.ok(html.includes(`data-k="${key}"`));
+  }
+  mismatched = true;
+  await runInNewContext('loadOps()', context);
+  assert.equal(context.opsState.textContent, '화면 수치와 서버 기록이 일치하지 않습니다.');
+  for (const id of ['total', 'blocked', 'failed', 'not-run']) assert.equal(element(`#ops-${id}`).textContent, '-');
   fail = true;
   await runInNewContext('loadOps()', context);
   for (const id of ['total', 'blocked', 'failed', 'not-run']) assert.equal(element(`#ops-${id}`).textContent, '-');
