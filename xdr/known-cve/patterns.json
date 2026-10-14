@@ -1,0 +1,25 @@
+{
+  "cve": "CVE-2021-44228",
+  "technique": "T1190",
+  "reviewedAt": "2026-10-14",
+  "sources": [
+    "https://logging.apache.org/security.html#CVE-2021-44228",
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+    "https://attack.mitre.org/techniques/T1190/"
+  ],
+  "patterns": [
+    {
+      "name": "완전한 JNDI LDAP 원격 조회 형태",
+      "condition": "요청 URL 또는 User-Agent에 여닫는 구분자와 LDAP 원격 목적지를 갖춘 리터럴 조회 구문이 있음",
+      "action": "block",
+      "evidence": "Apache 공지는 공격자가 제어하는 로그 입력의 JNDI 조회를 통한 원격 코드 실행 위험을 설명한다. T1190은 공개 서비스 취약점 악용 기법이다."
+    },
+    {
+      "name": "취약점 관련 흔적만 있는 요청",
+      "condition": "CVE 이름·JNDI 단어·잘린 구문·관련 경보 설명만 있으며 완전한 조회 형태는 없음",
+      "action": "alert",
+      "evidence": "이름·경보 수준·횟수만으로 악용을 확정하지 않는 이 모듈의 보수적 정책이다."
+    }
+  ],
+  "limitations": "문자열 형태 탐지이며 취약 라이브러리 설치나 악용 성공을 증명하지 않는다. 인코딩·난독화 변형을 해석하지 않는다. 입력을 실행하거나 외부 목적지에 접속하지 않는다."
+}

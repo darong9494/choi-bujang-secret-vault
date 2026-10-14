@@ -130,3 +130,7 @@ Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`, `SUPABASE
 ## 보너스 XDR: 무차별 로그인 공격 연습
 
 `xdr/brute-force/patterns.json`은 MITRE ATT&CK T1110 근거가 있는 두 연습 패턴을 담고, `xdr/brute-force/decide.mjs`는 가상 경보를 `block`·`alert`·`record`로 분류합니다. 저장소 루트에서 `npm run xdr:run -- brute-force`를 실행하면 결과를 `xdr/brute-force/result.json`에 갱신합니다. 결과는 fixture를 사용한 로컬 자기 점검이며 실제 ZTNA 차단이나 심판 판정이 아닙니다.
+
+## 보너스 XDR: 알려진 취약점 요청 검사
+
+`npm run xdr:run -- known-cve`로 기존 가상 경보를 검사합니다. 완전한 리터럴 원격 조회 형태는 `block`, 모호한 흔적은 `alert`, 일반 요청은 `record`입니다. CVE·MITRE 출처, 지원 범위와 결합 순서는 [모듈 안내](xdr/known-cve/README.md)에 있습니다. `checkAccess(request, alert)`는 기존 ZTNA 응답을 유지하면서 추가 검사 결과를 결합하며 기존 거부·추가 확인을 허용으로 바꾸지 않습니다. 운영 경보 전달·알림 채널·차단 집행은 미연결이고 기존 판정기 계약과 자료실 기능은 보존합니다. 별도 화면 버튼은 없습니다.
