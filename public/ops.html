@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>탈환 작전실 | BYTE BACK</title>
+  <link rel="stylesheet" href="/ops.css">
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101a28; color: #ecf4ff; }
+    main { max-width: 1100px; margin: auto; padding: 32px 20px; }
+    p { line-height: 1.7; color: #bfd0e5; } a { color: #8ad8df; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/">자료실로 돌아가기</a>
+    <h1>탈환 작전실</h1>
+    <section data-ops>
+      <h2>서버 점검 기록</h2>
+      <p>수치와 표는 <a href="/api/ops">같은 서버 응답</a>에서 읽습니다. 막은 공격은 자기 점검의 기대 응답 수이며 정상 요청 허용도 포함합니다. 가상 연습·실제 API·미실행을 구분하고 메모 본문은 표시하지 않습니다.</p>
+      <button type="button" data-refresh>지금 다시 확인</button>
+      <p data-state aria-live="polite">서버 기록 대기 중입니다.</p>
+      <dl id="ops-stats" class="ops-counts">
+        <dt>점검 항목</dt><dd data-k="total">-</dd>
+        <dt>막은 공격</dt><dd data-k="blocked">-</dd>
+        <dt>뚫린 공격</dt><dd data-k="failed">-</dd>
+        <dt>실행하지 않은 점검</dt><dd data-k="notRun">-</dd>
+      </dl>
+      <p data-value="meta"></p>
+      <h3>판정기 규칙</h3><p data-value="rules"></p>
+      <h3>탐지 사건</h3><p data-value="detection"></p>
+      <h3>회수 상태</h3><p data-value="revocation"></p>
+      <h3>복구 버전</h3><p data-value="recovery"></p>
+      <div class="ops-scroll"><table>
+        <thead><tr><th>단계</th><th>사례</th><th>출처</th><th>기대</th><th>실제 응답</th><th>요청 ID</th><th>확인 시각</th><th>결과</th></tr></thead>
+        <tbody data-rows></tbody>
+      </table></div>
+      <p>학생 작업: 화면·자료 API·판정 및 탐지 규칙·자기 점검. 제공 ALEPH SDP 엔진: 신원·기기 확인, 집행·회수·복원·감사. 외부 서비스: Vercel·Supabase. 이 화면의 성공 문구는 심판 통과 근거가 아닙니다.</p>
+    </section>
+  </main>
+  <script type="module" src="/ops-view.js"></script>
+</body>
+</html>

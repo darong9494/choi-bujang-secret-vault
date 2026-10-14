@@ -77,11 +77,16 @@ try {
   }
   for (const attempt of attackAttempts) {
     if (!attempt || typeof attempt !== 'object' || Array.isArray(attempt)
-        || Object.keys(attempt).sort().join(',') !== 'attackId,expected,observed'
+        || Object.keys(attempt).sort().join(',') !== (config.step === 12
+          ? 'attackId,expected,observed,result,stage' : 'attackId,expected,observed')
+        || (config.step === 12 && (!Number.isInteger(attempt.stage) || attempt.stage < 1 || attempt.stage > 12
+          || !['blocked', 'breached', 'not_run'].includes(attempt.result)
+          || (attempt.result === 'not_run' ? !['not_run', 'network_error'].includes(attempt.observed)
+            : !/^HTTP \d{3}(?:;|$)/u.test(attempt.observed))))
         || typeof attempt.attackId !== 'string' || !/^[a-z0-9][a-z0-9_.-]{0,79}$/iu.test(attempt.attackId)
         || typeof attempt.expected !== 'string' || !attempt.expected.trim() || attempt.expected.length > 300
         || typeof attempt.observed !== 'string' || !attempt.observed.trim() || attempt.observed.length > 300) {
-      fail('공격 점검 결과에는 attackId·expected·observed만 넣어 주세요.');
+      fail('점검 항목 계약을 확인해 주세요. 12단계는 attackId·stage·expected·observed·result, 이전 단계는 attackId·expected·observed입니다.');
     }
   }
   if (new Set(attackAttempts.map(item => item.attackId)).size !== attackAttempts.length) {
