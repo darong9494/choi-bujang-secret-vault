@@ -51,13 +51,14 @@ async function runStep6Checks(config) {
     try {
       const response = await fetch(new URL(path, app), {
         redirect: 'error', signal: AbortSignal.timeout(5000), cache: 'no-store',
+        alephEvidence: { caseId: attackId, requestKey: 'read' },
       });
       results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
-        observed: `실제 GET ${path} HTTP ${response.status}; ${response.status === expectedStatus ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `HTTP ${response.status}` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId, expected: `${description}: HTTP ${expectedStatus}`,
-        observed: `실제 GET ${path} 요청을 보냈으나 응답 확인 실패; 미확인` });
+        observed: 'network_error' });
     }
   }
 
@@ -66,15 +67,16 @@ async function runStep6Checks(config) {
       const response = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000001', app), {
         method: 'GET', redirect: 'error', cache: 'no-store',
         signal: AbortSignal.timeout(5000),
+        alephEvidence: { caseId: 'anonymous_note_restore', requestKey: 'read' },
       });
       results.push({ attackId: 'anonymous_note_restore',
-        expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
-        observed: `실제 GET /api/restore/:noteId HTTP ${response.status}; ${[401, 403, 404].includes(response.status) ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        expected: '비로그인 복구 요청: HTTP 401 또는 403; 404는 확인 불가',
+        observed: `HTTP ${response.status}` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId: 'anonymous_note_restore',
-        expected: '비로그인 복구 요청: HTTP 401·403·404 중 하나, 메모 내용 없음',
-        observed: '실제 GET /api/restore/:noteId 요청을 보냈으나 응답 확인 실패; 미확인' });
+        expected: '비로그인 복구 요청: HTTP 401 또는 403; 404는 확인 불가',
+        observed: 'network_error' });
     }
   }
 
@@ -82,61 +84,32 @@ async function runStep6Checks(config) {
     try {
       const response = await fetch(new URL('/api/device/status', app), {
         redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(5000),
+        alephEvidence: { caseId: 'anonymous_device_approval', requestKey: 'read' },
       });
       results.push({ attackId: 'anonymous_device_approval',
         expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
-        observed: `실제 GET /api/device/status HTTP ${response.status}; ${response.status === 401 ? '기대 상태 일치' : '기대 상태 불일치'}; 응답 본문 미기록` });
+        observed: `HTTP ${response.status}` });
       await response.body?.cancel();
     } catch {
       results.push({ attackId: 'anonymous_device_approval',
         expected: '비로그인 기기 승인 확인: HTTP 401, 승인 없음',
-        observed: '실제 GET /api/device/status 요청을 보냈으나 응답 확인 실패; 미확인' });
+        observed: 'network_error' });
     }
   }
 
-  const { decide } = await import('./decider.mjs');
-  const { fixtureRequests } = await import('../scripts/fixture-7.mjs');
-  const { normal } = fixtureRequests();
-  for (const [attackId, deviceRegistered, expected, expectedReason] of [
-    ['registered_device_read', true, 'allow', 'approved'],
-    ['unregistered_device_read', false, 'deny', 'device_not_registered'],
-  ]) {
-    const response = await decide({ ...normal, deviceRegistered });
-    results.push({ attackId,
-      expected: `로컬 가상 요청: ${expected}·${expectedReason}`,
-      observed: `로컬 가상 요청 실행: ${response.decision}·${response.reasonCode}; 운영 기기 등록·미등록 공격 판정은 미확인` });
-  }
-  if (config.step >= 7) {
-    const { suspicious } = fixtureRequests();
-    const stepUpResponse = await decide(suspicious);
-    results.push({ attackId: 'composite_risk_step_up',
-      expected: '로컬 복합 이상 가상 요청: step_up·step_up_required',
-      observed: `로컬 가상 요청 실행: ${stepUpResponse.decision}·${stepUpResponse.reasonCode}; 실제 재로그인 미실행` });
-    const verifiedResponse = await decide({ ...suspicious,
-      stepUp: { verified: true, authAgeSeconds: 60 } });
-    results.push({ attackId: 'engine_verified_step_up',
-      expected: '엔진 검증 재로그인 시각이 유효한 가상 요청: allow·approved',
-      observed: `로컬 가상 요청 실행: ${verifiedResponse.decision}·${verifiedResponse.reasonCode}; 실제 엔진 로그인 시각 검증은 미확인` });
-  }
-  if (config.step >= 9) {
-    const { detect } = await import('./detect.mjs');
-    const start = Date.UTC(2026, 9, 1, 0, 0, 0);
-    const events = (count, network) => Array.from({ length: count }, (_, index) => ({
-      at: new Date(start + index * 2000).toISOString(),
-      method: 'GET', identity: { sub: 'learner_fixture' }, deviceId: 'b'.repeat(16),
-      signals: { source: 'judge_fixture', network, region: 'usual' },
-    }));
-    const normalDetection = detect(events(30, 'usual'));
-    results.push({ attackId: 'normal_read_detection',
-      expected: '로컬 정상 가상 사건: observe',
-      observed: `로컬 가상 사건 실행: ${normalDetection.action}; 실제 권한 유지 상태는 미확인` });
-    const passFixtureEvents = events(121, 'usual').map(({ at, method, identity, deviceId }) => ({
-      at, method, identity, deviceId,
-    }));
-    const suspiciousDetection = detect(passFixtureEvents);
-    results.push({ attackId: 'unusual_network_burst_revocation_proposal',
-      expected: '로컬 복합 의심 가상 사건: propose_revocation·burst_read·단일 deviceId',
-      observed: `로컬 가상 사건 실행: ${suspiciousDetection.action}·${suspiciousDetection.reasonCode ?? 'none'}·${suspiciousDetection.target?.deviceId ?? 'no_target'}; 실제 회수는 미실행` });
-  }
+  // Local practice has no independently observed HTTP receipt. Keep it out of observed.
+  const pending = [
+    ['registered_device_read', '운영 등록 기기의 정상 자료 읽기 허용'],
+    ['unregistered_device_read', '운영 미등록 기기의 자료 읽기 거부'],
+  ];
+  if (config.step >= 7) pending.push(
+    ['composite_risk_step_up', '운영 복합 이상 요청의 추가 확인'],
+    ['engine_verified_step_up', '운영 재확인 뒤 정상 자료 읽기 허용'],
+  );
+  if (config.step >= 9) pending.push(
+    ['normal_read_detection', '운영 정상 조회의 권한 유지'],
+    ['unusual_network_burst_revocation_proposal', '운영 조회 폭주 탐지와 회수 제안'],
+  );
+  results.push(...pending.map(([attackId, expected]) => ({ attackId, expected, observed: 'not_run' })));
   return results;
 }
