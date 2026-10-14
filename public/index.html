@@ -7,7 +7,6 @@
   <title>나의 자료실 | BYTE BACK</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/ops.css">
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; }
     body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
@@ -74,31 +73,7 @@
       <p id="note-error" role="alert" hidden></p>
     </form>
     <ul id="notes" aria-live="polite" hidden></ul>
-    <section data-ops>
-      <h2>탈환 작전실</h2>
-      <p><a href="/ops.html">작전실 상세 화면</a> · <a href="/api/ops">서버 기록</a></p>
-      <p>운영 판정·탐지·회수·복구 기록의 연결 상태를 표시합니다. 연결되지 않은 결과는 수치를 채우지 않고 미실행으로 표시합니다. 구현된 규칙 수는 운영 성공 횟수가 아닙니다. <a href="/api/checks">학생 자기 점검 API</a>는 별도 연습 결과입니다.</p>
-      <button type="button" data-refresh>지금 다시 확인</button>
-      <p data-state aria-live="polite">서버 기록 대기 중입니다.</p>
-      <dl id="ops-stats" class="ops-counts">
-        <dt>점검 항목</dt><dd data-k="total">미실행</dd>
-        <dt>막은 공격</dt><dd data-k="blocked">미실행</dd>
-        <dt>뚫린 공격</dt><dd data-k="failed">미실행</dd>
-        <dt>실행하지 않은 점검</dt><dd data-k="notRun">미실행</dd>
-      </dl>
-      <p data-value="meta"></p>
-      <h3>판정기 규칙</h3><p data-value="rules"></p>
-      <h3>탐지 사건</h3><p data-value="detection"></p>
-      <h3>회수 상태</h3><p data-value="revocation"></p>
-      <h3>복구 버전</h3><p data-value="recovery"></p>
-      <div class="ops-scroll"><table>
-        <thead><tr><th>단계</th><th>사례</th><th>출처</th><th>기대</th><th>실제 응답</th><th>요청 ID</th><th>확인 시각</th><th>결과</th></tr></thead>
-        <tbody data-rows></tbody>
-      </table></div>
-      <p>학생 작업: 화면·자료 API·판정·탐지 규칙·자기 점검. 제공 ALEPH SDP 엔진: 신원·기기 확인, 집행·회수·복원·감사. 외부 서비스: Vercel·Supabase.</p>
-    </section>
   </main>
-  <script type="module" src="/ops-view.js"></script>
   <script type="module">
     const loginForm = document.querySelector('#login-form');
     const loginButton = document.querySelector('#login-button');
