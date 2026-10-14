@@ -26,7 +26,8 @@ function fakeFetch(calls, { approved = true, offline = false, leak = false } = {
       status = 200; body = { id: ownId, body: marker, title: marker };
     }
     if (leak && status === 401) body = { body: marker };
-    return new Response(JSON.stringify(body), { status, headers: { 'x-vercel-id': `test-receipt-${calls.length}` } });
+    const receiptHeader = u.hostname.endsWith('.supabase.co') ? 'sb-request-id' : 'x-vercel-id';
+    return new Response(JSON.stringify(body), { status, headers: { [receiptHeader]: `test-receipt-${calls.length}` } });
   };
 }
 

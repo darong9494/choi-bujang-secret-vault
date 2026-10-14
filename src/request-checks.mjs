@@ -33,7 +33,7 @@ export async function collectRequestChecks(config, { authorization = null } = {}
       const noteInDenial = kind === 'forbidden' && [401, 403].includes(response.status)
         && /"(?:body|content)"\s*:/u.test(text);
       const matches = statusMatches && !noteInDenial && (!validate || validate(json));
-      const requestId = response.headers.get('x-vercel-id');
+      const requestId = response.headers.get('x-vercel-id') ?? response.headers.get('sb-request-id');
       const row = { id, stage, kind, request, expected, httpStatus: response.status,
         requestId: typeof requestId === 'string' && /^[a-zA-Z0-9:._-]{1,100}$/u.test(requestId) ? requestId : null,
         attemptedAt, checkedAt: new Date().toISOString(),
