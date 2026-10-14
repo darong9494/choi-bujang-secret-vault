@@ -78,8 +78,23 @@
       <p><a href="/ops.html" style="color:#8ad8df">운영 결과 확인 화면 열기</a></p>
       <p>운영 결과 원본은 아직 연결되지 않았습니다. 원본을 조회하지 못한 상태에서는 수치를 표시하지 않습니다.</p>
     </section>
+    <section class="auth" id="request-measurements">
+      <h2>1~11단계 정상·금지 요청 실측</h2>
+      <p>현재 로그인 세션으로 읽기 요청만 실행합니다. 정상 보호자료 조회는 서버가 기기 승인을 확인한 경우에만 실행합니다. <a href="/checks.html" style="color:#8ad8df">로그인 없는 실측 화면·절차</a></p>
+      <button type="button" data-run-measurements>현재 로그인 상태로 실측 기록 만들기</button>
+      <button type="button" data-save-measurements disabled>실측 기록 JSON 저장</button>
+      <p data-measurement-state aria-live="polite">아직 실행하지 않았습니다.</p>
+      <p data-measurement-summary>실측 기록 없음</p>
+      <p data-measurement-confirmation>정상 보호자료 허용 + 금지 요청 거부: 확인 전</p>
+      <div style="overflow-x:auto"><table style="min-width:1100px;text-align:left">
+        <thead><tr><th>단계</th><th>구분</th><th>요청</th><th>기대 결과</th><th>실제 API 결과</th><th>요청 ID</th><th>확인 시각</th><th>판별·미실행 사유</th></tr></thead>
+        <tbody data-measurement-rows></tbody>
+      </table></div>
+      <p>이 표는 학생 API 실측이며 운영 판정·총공세 통과 결과가 아닙니다. 41종 총공세 시험은 미실행입니다. 본문·계정·기기 ID·토큰은 표에 넣지 않습니다.</p>
+    </section>
   </main>
   <script type="module">
+    import { mountMeasurements } from '/request-checks-view.js';
     const loginForm = document.querySelector('#login-form');
     const loginButton = document.querySelector('#login-button');
     const logoutButton = document.querySelector('#logout-button');
@@ -101,6 +116,8 @@
     let deviceCheckVersion = 0;
     let notesLoadVersion = 0;
     let installPrompt = null;
+    const resetMeasurements = mountMeasurements(document.querySelector('#request-measurements'),
+      () => activeSession?.access_token ? `Bearer ${activeSession.access_token}` : null);
 
     function showAuthError(message) {
       authError.textContent = message;
@@ -122,6 +139,7 @@
     }
 
     function setSession(session) {
+      resetMeasurements();
       ++deviceCheckVersion;
       ++notesLoadVersion;
       activeSession = session;

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1~11단계 API 실측 기록</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background:#101a28; color:#ecf4ff; }
+    main { max-width:1200px; margin:auto; padding:32px 20px; } a { color:#8ad8df; } p { line-height:1.7; }
+    button { padding:12px 20px; cursor:pointer; } .scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; } th,td { padding:12px; border-bottom:1px solid #51667c; text-align:left; vertical-align:top; min-width:90px; overflow-wrap:anywhere; }
+  </style>
+</head>
+<body>
+  <main data-anonymous-measurements>
+    <a href="/">자료실</a> · <a href="/ops.html">운영 작전실</a>
+    <h1>1~11단계 정상·금지 요청 실측 기록</h1>
+    <p>이 표는 학생 자료실 API에 보낸 실제 읽기 요청의 응답입니다. 운영 엔진 결과·41종 총공세와 구분합니다. 본문·계정·기기 ID·토큰은 기록하지 않습니다.</p>
+    <p>이 페이지에서는 로그인 없는 요청만 실행합니다. 정상 보호자료 요청은 자료실에서 로그인한 뒤 실측을 실행해야 하며, 서버의 기기 승인이 확인되어야 합니다. 공개 화면의 HTTP 200으로 보호자료 정상 허용을 대신하지 않습니다.</p>
+    <button type="button" data-run-measurements>로그인 없는 요청 실측</button>
+    <button type="button" data-save-measurements disabled>실측 기록 JSON 저장</button>
+    <p data-measurement-state aria-live="polite">아직 실행하지 않았습니다.</p>
+    <p data-measurement-summary>실측 기록 없음</p>
+    <p data-measurement-confirmation>정상 보호자료 허용 + 금지 요청 거부: 확인 전</p>
+    <div class="scroll"><table>
+      <thead><tr><th>단계</th><th>구분</th><th>요청</th><th>기대 결과</th><th>실제 API 결과</th><th>요청 ID</th><th>확인 시각</th><th>판별·미실행 사유</th></tr></thead>
+      <tbody data-measurement-rows></tbody>
+    </table></div>
+    <p>404는 경로 미구현·대상 없음일 수 있으므로 금지 요청 거부 증거로 쓰지 않습니다. 6·7·9·10단계의 실제 엔진 결과와 다른 실계정 접근은 기록 연결 전까지 미실행입니다. 41종 시험은 실행하지 않았으며 통과로 표시하지 않습니다.</p>
+  </main>
+  <script type="module" src="/request-checks-view.js"></script>
+</body>
+</html>
